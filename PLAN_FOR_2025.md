@@ -6,6 +6,45 @@ The plan for creating automatic-spoon.
 - Start with the most usefull functionality
 
 ## Architecture
+### CLI
+##### --config <file>
+
+### Configuration
+##### for database
+- folder to save sqlite
+##### for images
+- folder to save created images
+- expiration of images
+- delete image after N downloads
+##### for blobs
+- folder to save temporary blobs from openpose, midaspose etc
+##### for server
+- port for the server
+
+### Database
+##### Model
+
+##### Engine
+
+##### Job
+    - job_id
+    - image_id
+    - status
+
+##### Image
+    - image_id
+    - engine_id
+    - prompt
+    - negative_prompt
+    - loras: []model_id
+    - embeddings: []model_id
+    - reference_image_path
+    - poses
+        - openpose_path
+        - midaspose_path
+        - mediapipe_path
+    - remove_background: onnx from hugging face
+
 
 ### REST API
 #### POST /v1/models
@@ -56,6 +95,8 @@ Input:<br/>
 - vae: model_id
 - loras: []model_id
 - embeddings: []model_id
+- long_prompt_technique: compel | sd_embed
+- control_net: openpose | midaspose | mediapipepose
 - default scheduler
 - default steps
 - default cfg
@@ -64,13 +105,13 @@ Input:<br/>
 
 Output:<br/>
 - engine_id
-- status: Ready, Working,Closed
+- status: Ready| Working |Closed
 - checkpoint: model_id
 - vae: model_id
 - loras: []model_id
 - embeddings: []model_id
-- prompt_weighter: [compel or sd_embed]
-- controlnet: []TypeOfControlNet (like openpose, mediapipe, midaspose)
+- long_prompt_technique: compel | sd_embed
+- control_net: openpose | midaspose | mediapipepose
 - default scheduler
 - default steps
 - default cfg
@@ -94,6 +135,8 @@ Output:<br/>
     - default steps
     - default cfg
     - default width and height
+    - created_at
+
 
 #### PATCH /v1/engines/{engine_id}/start
 
@@ -119,6 +162,55 @@ Input:<br/>
     - midaspose_blob
     - mediapipe_blob
 - remove_background: onnx from hugging face
+- image_file_type: jpeg | png
     
+Output:<br/>
+- job_id
+- status: Waiting, Processing, Finished
+- image_id
+- created_at
+- started_at
+- finished_at
+
 Errors:<br/>
 - engine doesn't exist
+
+#### GET /v1/jobs
+#### GET /v1/images/{image_id}/download
+#### GET /v1/images/{image_id}
+Output: <br/>
+- engine_id
+- prompt
+- negative_prompt
+- loras
+- embeddings
+- reference_image_blob
+- poses
+    - openpose_blob
+    - midaspose_blob
+    - mediapipe_blob
+- remove_background: onnx from hugging face
+- image_file_type: jpeg | png
+
+
+### Logic
+Internally the server will have 2 main processes, the REST API and the Manager:<br/>
+The REST API will do two things: <br/>
+    - send commands to Manager to create/start/stop/delete engines, aimodels and jobs
+    - read the DB after user's request
+The Manager will: <br/>
+    - listen for commands and for results from the engines
+    - start and stop other processes that will run engines
+    - will write and update all the tables
+
+#### On start
+- start the Manager of engines
+    - update all engines from Ready/Working to Closed
+    - make all jobs from Processing to Waiting
+- start the REST API
+- enable queue between master and rest api
+
+#### On end
+- the manager will wait for jobs that processing to end and then close engines
+
+

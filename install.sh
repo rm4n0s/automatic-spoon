@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Install dependencies for development
+pip install pytest==8.4.2 \
+            pytest-asyncio==1.2.0
+
 # Install dependencies for CLI
 pip install click==8.3.0
 
@@ -9,7 +13,7 @@ pip install nicegui==3.1.0 \
             uvicorn==0.38.0 \
             tortoise-orm==0.25.1 \
             pydantic==2.12.3 \
-            pyyaml==6.0.3
+            mashumaro==3.17
 
 
 
