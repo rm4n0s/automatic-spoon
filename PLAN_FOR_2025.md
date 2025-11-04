@@ -83,6 +83,7 @@ Output:<br/>
     - name
     - status: Downloading, Ready, Error
     - path
+    - error
     - model_type
     - model_base
     - variant
@@ -154,14 +155,13 @@ Input:<br/>
 - engine_id
 - prompt
 - negative_prompt
-- loras
-- embeddings
+- loras: []modelID
+- embeddings : []modelID
+- vae : modelID
 - reference_image_blob
-- poses
-    - openpose_blob
-    - midaspose_blob
-    - mediapipe_blob
-- remove_background: onnx from hugging face
+- pose_image_blob
+- type_pose
+- remove_background_models : []modelID
 - image_file_type: jpeg | png
     
 Output:<br/>
@@ -184,13 +184,11 @@ Output: <br/>
 - negative_prompt
 - loras
 - embeddings
-- reference_image_blob
-- poses
-    - openpose_blob
-    - midaspose_blob
-    - mediapipe_blob
+- reference_image_path
+- pose_image_path
+- type_pose
 - remove_background: onnx from hugging face
-- image_file_type: jpeg | png
+- image_file_type: jpg | png
 
 
 ### Logic
