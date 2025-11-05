@@ -127,7 +127,7 @@ Errors:<br/>
 Output:<br/>
 - List
     - engine_id
-    - status: Ready, Working,Closed
+    - status: ready, busy,stopped
     - checkpoint: model_id
     - vae: model_id
     - loras: []model_id

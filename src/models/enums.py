@@ -6,9 +6,12 @@ class AIModelStatus(enum.StrEnum):
     ERROR = "error"
 
 class Variant(enum.StrEnum):
-    FP8 = "fp8"
     FP16= "fp16"
     FP32 = "fp32"
+
+class PathType(enum.StrEnum):
+    HUGGING_FACE = "hugging_face"
+    FILE = "FILE"
 
 class AIModelType(enum.StrEnum):
     CHECKPOINT = "checkpoint"
@@ -20,6 +23,7 @@ class AIModelType(enum.StrEnum):
     REMBG = "rembg"
 
 class AIModelBase(enum.StrEnum):
+    ALL = "all"
     SD = "sd"
     SDXL = "sdxl"
 
@@ -44,8 +48,8 @@ class Scheduler(enum.StrEnum):
     DPM2SA = "dpm2sa"
     DPM2M = "dpm2m"
     DPMSDE = "dpmsde"
-    DPMFAST = "dpmfast" # from k_diffusion
-    DPMADAPTIVE = "dpmadaptive" # from k_diffusion
+    # DPMFAST = "dpmfast" # from k_diffusion
+    # DPMADAPTIVE = "dpmadaptive" # from k_diffusion
     LMSKARRAS = "lmskarras"
     DPM2KARRAS = "dpm2karras"
     DPM2AKARRAS = "dpm2akarras"
@@ -61,9 +65,9 @@ class Scheduler(enum.StrEnum):
 
 
 class EngineStatus(enum.StrEnum):
-    Ready = "ready"
-    Working = "working"
-    Closed = "closed"
+    READY = "ready"
+    BUSY = "busy"
+    STOPPED = "stopped"
 
 class JobStatus(enum.StrEnum):
     WAITING = "waiting"

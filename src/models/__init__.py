@@ -14,6 +14,7 @@ from .enums import (
     EngineStatus,
     JobStatus,
     FileImageType,
+    PathType
 )
 
 
@@ -36,4 +37,5 @@ __all__ = [
     "EngineStatus",
     "JobStatus",
     "FileImageType",
+    "PathType"
 ]

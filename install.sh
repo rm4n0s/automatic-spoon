@@ -2,7 +2,8 @@
 
 # Install dependencies for development
 pip install pytest==8.4.2 \
-            pytest-asyncio==1.2.0
+            pytest-asyncio==1.2.0 \
+            python-dotenv==1.2.1
 
 # Install dependencies for CLI
 pip install click==8.3.0
