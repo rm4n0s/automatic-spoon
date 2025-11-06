@@ -2,8 +2,7 @@
 
 # Install dependencies for development
 pip install pytest==8.4.2 \
-            pytest-asyncio==1.2.0 \
-            python-dotenv==1.2.1
+            pytest-asyncio==1.2.0 
 
 # Install dependencies for CLI
 pip install click==8.3.0
@@ -75,8 +74,10 @@ pip install diffusers==0.35.2 \
 ## Install for torch for gfx1151 GPU (for my personal laptop ASUS ROG Flow Z13)
 if lspci -nn | grep -q '\[1002:1586\]'; then 
     echo 'GFX1151 GPU detected. Installing specific torch dependencies to fix OOMs '
-    pip install --index-url https://rocm.nightlies.amd.com/v2/gfx1151/ "rocm[libraries,devel]"
-    pip install --index-url https://rocm.nightlies.amd.com/v2/gfx1151/ --pre torch torchaudio torchvision 
+    # pip install --index-url https://rocm.nightlies.amd.com/v2/gfx1151/ "rocm[libraries,devel]"
+    # pip install --index-url https://rocm.nightlies.amd.com/v2/gfx1151/ --pre torch torchaudio torchvision 
+    pip install --index-url https://repo.amd.com/rocm/whl/gfx1151/ "rocm[libraries,devel]"
+    pip install --index-url https://repo.amd.com/rocm/whl/gfx1151/ --pre torch torchaudio torchvision 
 else 
     pip install torch torchaudio torchvision 
 fi

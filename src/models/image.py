@@ -1,7 +1,7 @@
 from tortoise.models import Model
 from tortoise import fields
 
-from .enums import AIModelType, FileImageType
+from src.ctrls.ctrl_types.enums import AIModelType, FileImageType
 
 class Image(Model):
     id = fields.IntField(primary_key=True)

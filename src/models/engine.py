@@ -1,4 +1,4 @@
-from .enums import AIModelType, ControlNetPose, EngineStatus, Scheduler, LongPromptTechnique
+from src.ctrls.ctrl_types.enums import AIModelType, ControlNetPose, EngineStatus, Scheduler, LongPromptTechnique
 from tortoise.models import Model
 from tortoise import fields
 
@@ -18,13 +18,14 @@ class Engine(Model):
     controlnet_conditioning_scale = fields.FloatField()  # Adjust 0.8-1.2
     control_guidance_start = fields.FloatField()
     control_guidance_end = fields.FloatField()
-    created_at = fields.DateField()
-    updated_at = fields.DateField()
-    closed_at = fields.DateField()
+    created_at = fields.DatetimeField()
+    updated_at = fields.DatetimeField()
+    closed_at = fields.DatetimeField()
 
 
 class AIModelForEngine(Model):
     id = fields.IntField(primary_key=True)
     engine_id = fields.IntField()
+    weight = fields.FloatField()
     model_id = fields.IntField()
     model_type = fields.CharEnumField(enum_type=AIModelType)

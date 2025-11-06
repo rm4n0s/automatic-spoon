@@ -1,4 +1,4 @@
-from .enums import AIModelBase, AIModelStatus, AIModelType, Variant, PathType
+from src.ctrls.ctrl_types.enums import AIModelBase, AIModelStatus, AIModelType, Variant, PathType
 from tortoise.models import Model
 from tortoise import fields
 
@@ -9,6 +9,7 @@ class AIModel(Model):
     status = fields.CharEnumField(enum_type=AIModelStatus)
     error = fields.TextField()
     path = fields.TextField()
+    trigger_words = fields.TextField()
     path_type = fields.CharEnumField(enum_type=PathType)
     variant = fields.CharEnumField(enum_type=Variant)
     model_type = fields.CharEnumField(enum_type=AIModelType)

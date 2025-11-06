@@ -1,0 +1,46 @@
+# the variables needed for test
+vae:
+  name: "the name"
+  file_path: "file path of safetensors"
+  hugging_face: "the repo id of safetensors"
+
+checkpoint:
+  name: "the name"
+  file_path: "file path of safetensors"
+  hugging_face: "the repo id of safetensors" 
+
+openpose:
+  name: "the name"
+  file_path: "file path of safetensors"
+  hugging_face: "the repo id of safetensors" 
+
+mediapipe:
+  name: "the name"
+  file_path: "file path of safetensors"
+  hugging_face: "the repo id of safetensors" 
+
+midas:
+  name: "the name"
+  file_path: "file path of safetensors"
+  hugging_face: "the repo id of safetensors" 
+
+rembg:
+  name: "the name"
+  file_path: "file path of safetensors"
+  hugging_face: "the repo id of safetensors" 
+
+loras:
+  - lora:
+      name: "the name"
+      file_path: "file path of safetensors"
+      weight: 0.8
+  - lora:
+      name: "the name"
+      file_path: "file path of safetensors"
+      weight: 0.8
+
+embeddings:
+  - embedding:
+      name: "the name"
+      file_path: "file path of safetensors"
+      hugging_face: "the repo id of safetensors" 

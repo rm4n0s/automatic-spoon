@@ -1,42 +1,48 @@
 import enum
 
+
 class AIModelStatus(enum.StrEnum):
     DOWNLOADING = "downloading"
     READY = "ready"
     ERROR = "error"
 
+
 class Variant(enum.StrEnum):
-    FP16= "fp16"
+    FP16 = "fp16"
     FP32 = "fp32"
+
 
 class PathType(enum.StrEnum):
     HUGGING_FACE = "hugging_face"
     FILE = "FILE"
 
+
 class AIModelType(enum.StrEnum):
     CHECKPOINT = "checkpoint"
-    EMBEDDING  = "embedding"
+    EMBEDDING = "embedding"
     VAE = "vae"
     LORA = "lora"
     CONTROLNET_OPENPOSE = "controlnet_openpose"
     CONTROLNET_MIDAS = "controlnet_midas"
     REMBG = "rembg"
 
+
 class AIModelBase(enum.StrEnum):
     ALL = "all"
     SD = "sd"
     SDXL = "sdxl"
 
+
 class LongPromptTechnique(enum.StrEnum):
-    NONE = "none"
     COMPEL = "compel"
     SDEMBED = "sdembed"
 
+
 class ControlNetPose(enum.StrEnum):
-    NONE = "none"
     MIDAS = "midas"
     OPENPOSE = "openpose"
     MEDIAPIPE = "mediapipe"
+
 
 class Scheduler(enum.StrEnum):
     EULERA = "eulera"
@@ -69,10 +75,12 @@ class EngineStatus(enum.StrEnum):
     BUSY = "busy"
     STOPPED = "stopped"
 
+
 class JobStatus(enum.StrEnum):
     WAITING = "waiting"
     PROCESSING = "processing"
     FINISHED = "finished"
+
 
 class FileImageType(enum.StrEnum):
     JPG = "jpg"

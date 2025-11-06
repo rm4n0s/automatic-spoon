@@ -1,17 +1,12 @@
-from pytsterrors import TSTError
-from src.models import Scheduler, AIModel, PathType, Variant, AIModelBase
 import torch
+from compel import CompelForSD, CompelForSDXL
 from diffusers import (
     AutoencoderKL,
     ControlNetModel,
-    StableDiffusionPipeline,
-    StableDiffusionXLPipeline,
-    StableDiffusionXLControlNetPipeline,
-    StableDiffusionControlNetPipeline,
-    DiffusionPipeline,
     DDIMScheduler,
     DDPMScheduler,
     DEISMultistepScheduler,
+    DiffusionPipeline,
     DPMSolverMultistepScheduler,
     DPMSolverSinglestepScheduler,
     EulerAncestralDiscreteScheduler,
@@ -22,11 +17,32 @@ from diffusers import (
     LCMScheduler,
     LMSDiscreteScheduler,
     PNDMScheduler,
+    StableDiffusionControlNetPipeline,
+    StableDiffusionPipeline,
+    StableDiffusionXLControlNetPipeline,
+    StableDiffusionXLPipeline,
     UniPCMultistepScheduler,
 )
+from pytsterrors import TSTError
+from sd_embed.embedding_funcs import get_weighted_text_embeddings_sdxl
+
+from src.ctrls.ctrl_types import (
+    AIModelBase,
+    Engine,
+    Job,
+    LongPromptTechnique,
+    Lora,
+    Model,
+    PathType,
+    Scheduler,
+    Variant,
+)
+from src.ctrls.ctrl_types.enums import ControlNetPose
+
+from .pose import prepare_pose_images
 
 
-def create_controlnets(cnet_models: list[AIModel]) -> list[ControlNetModel]:
+def create_controlnets(cnet_models: list[Model]) -> list[ControlNetModel]:
     cnets = []
     for v in cnet_models:
         variant = str(v.variant)
@@ -51,12 +67,13 @@ def create_controlnets(cnet_models: list[AIModel]) -> list[ControlNetModel]:
                 cnets.append(cnm)
     return cnets
 
-def create_vae(vae: AIModel) -> AutoencoderKL:
+
+def create_vae(vae: Model) -> AutoencoderKL:
     variant = str(vae.variant)
     torch_dtype = torch.float16
     if vae.variant == Variant.FP32:
         torch_dtype = torch.float32
-    
+
     match vae.path_type:
         case PathType.FILE:
             return AutoencoderKL.from_single_file(
@@ -71,8 +88,9 @@ def create_vae(vae: AIModel) -> AutoencoderKL:
                 variant=variant,
             )
 
+
 def create_pipe(
-    checkpoint: AIModel, vae: AutoencoderKL | None, cnets: list[ControlNetModel]
+    checkpoint: Model, vae: AutoencoderKL | None, cnets: list[ControlNetModel]
 ) -> DiffusionPipeline:
     variant = str(checkpoint.variant)
     torch_dtype = torch.float16
@@ -191,6 +209,21 @@ def create_pipe(
     return pipe
 
 
+def load_loras(pipe: DiffusionPipeline, loras: list[Lora]):
+    for lora in loras:
+        print(lora)
+        lora_path = lora.model.path  # Replace or comment out
+        lora_weight = lora.weight
+        if lora_path:
+            pipe.load_lora_weights(lora_path)
+            pipe.fuse_lora(lora_scale=lora_weight)
+
+
+def load_embeddings(pipe: DiffusionPipeline, embeddings: list[Model]):
+    for embed in embeddings:
+        pipe.load_textual_inversion(embed.path, token=embed.trigger_words)
+
+
 def set_scheduler(pipe: DiffusionPipeline, scheduler_enum: Scheduler):
     match scheduler_enum:
         case Scheduler.EULERA:
@@ -259,3 +292,80 @@ def set_scheduler(pipe: DiffusionPipeline, scheduler_enum: Scheduler):
             pipe.scheduler = DDPMScheduler.from_config(pipe.scheduler.config)
         case Scheduler.DEIS:
             pipe.scheduler = DEISMultistepScheduler.from_config(pipe.scheduler.config)
+
+
+def run_pipe(pipe, engine: Engine, job: Job):  # pyright: ignore[reportMissingParameterType,reportUnknownParameterType]
+    seed = job.seed or engine.seed
+    guidance_scale = job.guidance_scale or engine.guidance_scale
+    num_inference_steps = job.steps or engine.steps
+    control_guidance_start = job.control_guidance_start or engine.control_guidance_start
+    control_guidance_end = job.control_guidance_end or engine.control_guidance_end
+    height = job.height or engine.height
+    width = job.width or engine.width
+
+    prompt = job.prompt
+    negative_prompt = job.negative_prompt
+
+    prompt_embeds = None
+    prompt_neg_embeds = None
+    pooled_prompt_embeds = None
+    negative_pooled_prompt_embeds = None
+
+    conditioning_images, controlnet_conditioning_scale = prepare_pose_images(job)
+
+    if engine.long_prompt_technique is not None:
+        match engine.long_prompt_technique:
+            case LongPromptTechnique.COMPEL:
+                if engine.checkpoint_model.model_base == AIModelBase.SDXL:
+                    compel = CompelForSDXL(
+                        pipe,
+                    )
+                    conditioning = compel(
+                        main_prompt=prompt, negative_prompt=negative_prompt
+                    )
+                    prompt_embeds = conditioning.embeds
+                    pooled_prompt_embeds = conditioning.pooled_embeds
+                    prompt_neg_embeds = conditioning.negative_embeds
+                    negative_pooled_prompt_embeds = conditioning.negative_pooled_embeds
+
+                if engine.checkpoint_model.model_base == AIModelBase.SD:
+                    compel = CompelForSD(
+                        pipe,
+                    )
+                    conditioning = compel(
+                        prompt=prompt, negative_prompt=negative_prompt
+                    )
+                    prompt_embeds = conditioning.embeds
+                    pooled_prompt_embeds = conditioning.pooled_embeds
+                    prompt_neg_embeds = conditioning.negative_embeds
+                    negative_pooled_prompt_embeds = conditioning.negative_pooled_embeds
+
+            case LongPromptTechnique.SDEMBED:
+                (
+                    prompt_embeds,
+                    prompt_neg_embeds,
+                    pooled_prompt_embeds,
+                    negative_pooled_prompt_embeds,
+                ) = get_weighted_text_embeddings_sdxl(
+                    pipe, prompt=prompt, neg_prompt=negative_prompt
+                )
+
+    generator = torch.Generator(device="cuda").manual_seed(seed)
+    image = pipe(
+        prompt_embeds=prompt_embeds,
+        negative_prompt_embeds=prompt_neg_embeds,
+        pooled_prompt_embeds=pooled_prompt_embeds,
+        negative_pooled_prompt_embeds=negative_pooled_prompt_embeds,
+        guidance_scale=guidance_scale,
+        num_inference_steps=num_inference_steps,
+        image=conditioning_images,
+        controlnet_conditioning_scale=controlnet_conditioning_scale,
+        control_guidance_start=control_guidance_start,
+        control_guidance_end=control_guidance_end,
+        height=height,
+        width=width,
+        generator=generator,
+    ).images[0]
+
+    output = "temporary.png"
+    image.save(output)

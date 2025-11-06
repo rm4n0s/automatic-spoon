@@ -1,5 +1,7 @@
 {
-    "reportPrivateImportUsage": false,
-    "reportUnknownMemberType":false,
-    "reportUnknownArgumentType": false
+  "reportPrivateImportUsage": false,
+  "reportUnknownMemberType": false,
+  "reportUnknownArgumentType": false,
+  "reportUnknownVariableType": false,
+  "reportAny": false
 }

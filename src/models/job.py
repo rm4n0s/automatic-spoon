@@ -1,13 +1,13 @@
 from tortoise.models import Model
 from tortoise import fields
 
-from .enums import JobStatus
+from src.ctrls.ctrl_types.enums import JobStatus
 
 class Job(Model):
     id = fields.IntField(primary_key=True)
     image_id = fields.IntField()
     engine_id = fields.IntField()
     status = fields.CharEnumField(enum_type=JobStatus)
-    created_at = fields.DateField()
-    updated_at = fields.DateField()
-    finshed_at = fields.DateField()
+    created_at = fields.DatetimeField()
+    updated_at = fields.DatetimeField()
+    finshed_at = fields.DatetimeField()
