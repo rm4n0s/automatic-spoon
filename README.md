@@ -3,7 +3,7 @@ A simple REST API that will create images, control poses, and remove backgrounds
 
 ## License
 The project has the controversial SSPLv1 license. <br/>
-It is like based on GPLv3 license with one caveat on 13th paragraph. If you use the software as a service, then publish all the scripts and source code to replicate it on another hardware. <br/> 
+It is like based on GPLv3 license with one caveat on 13th paragraph. If you use the software as a service, then publish all the scripts and source code to replicate it on another hardware. <br/>
 For more information read the 'LICENSE' file.
 
 ## Installation
@@ -19,4 +19,23 @@ bash install.sh
 ```bash
 source .venv/bin/activate
 run main.py
+```
+
+
+## Test
+First make sure you have created test-config.yaml like in the example test-config-example.yaml <br/>
+Afte that execute
+```bash
+pytest -s --log-cli-level=DEBUG
+```
+
+## Problems
+When deleting .venv and recreating, some times it throws an error that can't find CUDA driver or something like that.<br/>
+So I clean the packages and try again
+
+```bash
+rm -rf ~/.cache/pip
+pip cache purge
+pip uninstall rocm torch torchaudio torchvision
+bash install.sh
 ```

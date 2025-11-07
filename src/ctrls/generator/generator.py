@@ -1,11 +1,16 @@
-import multiprocessing
+import logging
+from multiprocessing.queues import Queue
 
 from diffusers import DiffusionPipeline
-from pytsterrors import TSTError
 
-from src.ctrls.ctrl_types.types import Engine, Job
+from src.ctrls.ctrl_types import (
+    Engine,
+    EngineCommand,
+    EngineCommandEnums,
+    EngineResult,
+    EngineResultEnums,
+)
 
-from .commands import EngineCommands
 from .pipe import (
     create_controlnets,
     create_pipe,
@@ -18,15 +23,18 @@ from .pipe import (
 
 
 class Generator:
-    _command_queue: multiprocessing.Queue[tuple[EngineCommands, Job]]
+    _command_queue: Queue[EngineCommand]
+    _result_queue: Queue[EngineResult]
     _engine: Engine
 
     def __init__(
         self,
         engine: Engine,
-        commands_queue: multiprocessing.Queue[tuple[EngineCommands, Job]],
+        commands_queue: Queue[EngineCommand],
+        result_queue: Queue[EngineResult],
     ):
         self._command_queue = commands_queue
+        self._result_queue = result_queue
         self._engine = engine
 
     def _create_pipe(self) -> DiffusionPipeline:
@@ -53,14 +61,32 @@ class Generator:
     def listening(self):
         pipe = self._create_pipe()
         while True:
-            cmd, job = self._command_queue.get()
-            match cmd:
-                case EngineCommands.JOB:
-                    run_pipe(pipe, self._engine, job)
+            cmd = self._command_queue.get()
+            match cmd.command:
+                case EngineCommandEnums.JOB:
+                    logging.debug("received job")
+                    if cmd.value is None:
+                        self._result_queue.put(
+                            EngineResult(EngineResultEnums.ERROR, "job was None")
+                        )
+                        continue
+
+                    job = cmd.value
+                    image = run_pipe(pipe, self._engine, job)
+                    image.save(job.save_file_path)
+                    self._result_queue.put(EngineResult(EngineResultEnums.JOB, job))
+                case EngineCommandEnums.CLOSE:
+                    logging.debug("closing")
+                    break
+
+        self._result_queue.put(EngineResult(EngineResultEnums.CLOSED, None))
 
 
 def start_generator(
     engine: Engine,
-    commands_queue: multiprocessing.Queue[tuple[EngineCommands, Job]],
+    commands_queue: Queue[EngineCommand],
+    result_queue: Queue[EngineResult],
 ):
-    generator = Generator(engine, commands_queue)
+    generator = Generator(engine, commands_queue, result_queue)
+    logging.debug(f"start generator with engine named {engine.name} and id {engine.id}")
+    generator.listening()

@@ -37,7 +37,6 @@ from src.ctrls.ctrl_types import (
     Scheduler,
     Variant,
 )
-from src.ctrls.ctrl_types.enums import ControlNetPose
 
 from .pose import prepare_pose_images
 
@@ -148,7 +147,7 @@ def create_pipe(
         )
 
     # WITH CONTROLL NET
-    if (
+    elif (
         checkpoint.model_base == AIModelBase.SD
         and checkpoint.path_type == PathType.FILE
         and len(cnets) > 0
@@ -221,7 +220,14 @@ def load_loras(pipe: DiffusionPipeline, loras: list[Lora]):
 
 def load_embeddings(pipe: DiffusionPipeline, embeddings: list[Model]):
     for embed in embeddings:
-        pipe.load_textual_inversion(embed.path, token=embed.trigger_words)
+        trigger = ""
+        if embed.trigger_neg_words is not None:
+            trigger = embed.trigger_neg_words
+
+        if embed.trigger_pos_words is not None:
+            trigger = embed.trigger_pos_words
+
+        pipe.load_textual_inversion(embed.path, token=trigger)
 
 
 def set_scheduler(pipe: DiffusionPipeline, scheduler_enum: Scheduler):
@@ -367,5 +373,4 @@ def run_pipe(pipe, engine: Engine, job: Job):  # pyright: ignore[reportMissingPa
         generator=generator,
     ).images[0]
 
-    output = "temporary.png"
-    image.save(output)
+    return image

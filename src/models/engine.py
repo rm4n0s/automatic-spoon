@@ -1,6 +1,13 @@
-from src.ctrls.ctrl_types.enums import AIModelType, ControlNetPose, EngineStatus, Scheduler, LongPromptTechnique
-from tortoise.models import Model
 from tortoise import fields
+from tortoise.models import Model
+
+from src.ctrls.ctrl_types.enums import (
+    AIModelType,
+    ControlNetPose,
+    EngineStatus,
+    LongPromptTechnique,
+    Scheduler,
+)
 
 
 class Engine(Model):

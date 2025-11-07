@@ -1,16 +1,18 @@
-from dataclasses import dataclass
-from datetime import datetime
+from dataclasses import dataclass, field
+
 from .enums import (
-    AIModelStatus,
-    PathType,
-    Variant,
-    AIModelType,
     AIModelBase,
-    EngineStatus,
-    LongPromptTechnique,
+    AIModelStatus,
+    AIModelType,
     ControlNetPose,
-    Scheduler,
+    EngineCommandEnums,
+    EngineResultEnums,
+    EngineStatus,
     FileImageType,
+    LongPromptTechnique,
+    PathType,
+    Scheduler,
+    Variant,
 )
 
 
@@ -19,14 +21,15 @@ class Model:
     id: int
     name: str
     status: AIModelStatus
-    error: str
     path: str
-    trigger_words: str
     path_type: PathType
     variant: Variant
     model_type: AIModelType
     model_base: AIModelBase
     tags: str
+    trigger_pos_words: str | None = None
+    trigger_neg_words: str | None = None
+    error: str | None = None
 
 
 @dataclass
@@ -40,23 +43,21 @@ class Engine:
     id: int
     name: str
     status: EngineStatus
-    long_prompt_technique: LongPromptTechnique | None
-    controlnet: ControlNetPose | None
     checkpoint_model: Model
     lora_models: list[Lora]
-    vae_model: Model | None
     control_net_models: list[Model]
     embedding_models: list[Model]
-    rembg_model: Model | None
     scheduler: Scheduler
     guidance_scale: float
     seed: int
     width: int
     height: int
     steps: int
-    controlnet_conditioning_scale: float
-    control_guidance_start: float
-    control_guidance_end: float
+    long_prompt_technique: LongPromptTechnique | None = None
+    vae_model: Model | None = None
+    controlnet_conditioning_scale: float | None = None
+    control_guidance_start: float | None = None
+    control_guidance_end: float | None = None
 
 
 @dataclass
@@ -71,16 +72,28 @@ class Job:
     id: int
     prompt: str
     negative_prompt: str
-    reference_image_path: str | None
-    pose_images: list[PoseImage]
-    image_file_type: FileImageType
-    rembgModel: Model | None
-    scheduler: Scheduler | None
-    guidance_scale: float | None
-    seed: int | None
-    width: int | None
-    height: int | None
-    steps: int | None
-    controlnet_conditioning_scale: float | None
-    control_guidance_start: float | None
-    control_guidance_end: float | None
+    save_file_path: str
+    pose_images: list[PoseImage] = field(default_factory=list)
+    reference_image_path: str | None = None
+    image_file_type: FileImageType = FileImageType.PNG
+    scheduler: Scheduler | None = None
+    guidance_scale: float | None = None
+    seed: int | None = None
+    width: int | None = None
+    height: int | None = None
+    steps: int | None = None
+    controlnet_conditioning_scale: float | None = None
+    control_guidance_start: float | None = None
+    control_guidance_end: float | None = None
+
+
+@dataclass
+class EngineCommand:
+    command: EngineCommandEnums
+    value: Job | None
+
+
+@dataclass
+class EngineResult:
+    result: EngineResultEnums
+    value: Job | str | None

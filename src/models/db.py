@@ -15,4 +15,3 @@ async def async_init_db(filepath: str) -> None:
 
 async def async_close_db() -> None:
     await Tortoise.close_connections()
-

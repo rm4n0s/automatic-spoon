@@ -1,7 +1,8 @@
-from tortoise.models import Model
 from tortoise import fields
+from tortoise.models import Model
 
 from src.ctrls.ctrl_types.enums import JobStatus
+
 
 class Job(Model):
     id = fields.IntField(primary_key=True)

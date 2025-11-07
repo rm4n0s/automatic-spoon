@@ -24,7 +24,6 @@ class AIModelType(enum.StrEnum):
     LORA = "lora"
     CONTROLNET_OPENPOSE = "controlnet_openpose"
     CONTROLNET_MIDAS = "controlnet_midas"
-    REMBG = "rembg"
 
 
 class AIModelBase(enum.StrEnum):
@@ -85,3 +84,14 @@ class JobStatus(enum.StrEnum):
 class FileImageType(enum.StrEnum):
     JPG = "jpg"
     PNG = "png"
+
+
+class EngineCommandEnums(enum.StrEnum):
+    JOB = "job"
+    CLOSE = "close"
+
+
+class EngineResultEnums(enum.StrEnum):
+    JOB = "job"
+    ERROR = "error"
+    CLOSED = "closed"

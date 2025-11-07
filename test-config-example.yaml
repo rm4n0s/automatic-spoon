@@ -1,0 +1,56 @@
+# These is an example for configuring tests.
+# You need to feel these variables and rename the file to test-config.yaml and then call pytest
+#
+vae_sd:
+  file_path: "file path of .safetensors"
+  hugging_face: "the repo id of ..safetensors"
+
+vae_sdxl:
+  file_path: "file path of .safetensors"
+  hugging_face: "the repo id of ..safetensors"
+
+checkpoint_sd:
+  file_path: "file path of .safetensors"
+  hugging_face: "the repo id of a .safetensors"
+
+checkpoint_sdxl:
+  file_path: "file path of .safetensors"
+  hugging_face: "the repo id of a .safetensors"
+
+openpose:
+  file_path: "file path of .safetensors"
+  hugging_face: "for ex lllyasviel/control_v11p_sd15_openpose"
+
+mediapipe:
+  file_path: "file path of .safetensors"
+  hugging_face: "for ex lllyasviel/control_v11p_sd15_openpose"
+
+midas:
+  file_path: "file path of .safetensors"
+  hugging_face: "for ex. lllyasviel/control_v11f1p_sd15_depth"
+
+loras_sd:
+  - file_path: "file path of .safetensors"
+    weight: 0.8
+  - file_path: "file path of .safetensors"
+    weight: 0.8
+    trigger_pos: "the trigger word"
+    trigger_neg: "the trigger word"
+
+loras_sdxl:
+  - file_path: "file path of .safetensors"
+    weight: 0.8
+  - file_path: "file path of .safetensors"
+    weight: 0.8
+
+embeddings_sd:
+  - file_path: "file path of .safetensors"
+    hugging_face: "the repo id of .safetensors"
+    trigger_pos: "the trigger word"
+    trigger_neg: "the trigger word"
+
+embeddings_sdxl:
+  - file_path: "file path of .safetensors"
+    hugging_face: "the repo id of .safetensors"
+    trigger_pos: "the trigger word"
+    trigger_neg: "the trigger word"
