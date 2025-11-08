@@ -45,5 +45,6 @@ if lspci -nn | grep -q '\[1002:1586\]'; then
     # pip install --index-url https://repo.amd.com/rocm/whl/gfx1151/ "rocm[libraries,devel]"
     # pip install --index-url https://repo.amd.com/rocm/whl/gfx1151/ --pre torch torchaudio torchvision
 else
-    pip install torch torchaudio torchvision
+    # pip install torch torchaudio torchvision
+    echo '+++++++++++++++++ INSTALL torch torchaudio torchvision BASED ON YOUR GPU !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! '
 fi
