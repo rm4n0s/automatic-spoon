@@ -26,22 +26,24 @@ from diffusers import (
 from pytsterrors import TSTError
 from sd_embed.embedding_funcs import get_weighted_text_embeddings_sdxl
 
-from src.ctrls.ctrl_types import (
+from src.schemas.aimodel_schemas import AIModelSchema
+from src.schemas.enums import (
     AIModelBase,
-    Engine,
-    Job,
     LongPromptTechnique,
-    Lora,
-    Model,
     PathType,
     Scheduler,
     Variant,
+)
+from src.schemas.types import (
+    Engine,
+    Job,
+    Lora,
 )
 
 from .pose import prepare_pose_images
 
 
-def create_controlnets(cnet_models: list[Model]) -> list[ControlNetModel]:
+def create_controlnets(cnet_models: list[AIModelSchema]) -> list[ControlNetModel]:
     cnets = []
     for v in cnet_models:
         variant = str(v.variant)
@@ -67,7 +69,7 @@ def create_controlnets(cnet_models: list[Model]) -> list[ControlNetModel]:
     return cnets
 
 
-def create_vae(vae: Model) -> AutoencoderKL:
+def create_vae(vae: AIModelSchema) -> AutoencoderKL:
     variant = str(vae.variant)
     torch_dtype = torch.float16
     if vae.variant == Variant.FP32:
@@ -89,7 +91,7 @@ def create_vae(vae: Model) -> AutoencoderKL:
 
 
 def create_pipe(
-    checkpoint: Model, vae: AutoencoderKL | None, cnets: list[ControlNetModel]
+    checkpoint: AIModelSchema, vae: AutoencoderKL | None, cnets: list[ControlNetModel]
 ) -> DiffusionPipeline:
     variant = str(checkpoint.variant)
     torch_dtype = torch.float16
@@ -218,7 +220,7 @@ def load_loras(pipe: DiffusionPipeline, loras: list[Lora]):
             pipe.fuse_lora(lora_scale=lora_weight)
 
 
-def load_embeddings(pipe: DiffusionPipeline, embeddings: list[Model]):
+def load_embeddings(pipe: DiffusionPipeline, embeddings: list[AIModelSchema]):
     for embed in embeddings:
         trigger = ""
         if embed.trigger_neg_words is not None:

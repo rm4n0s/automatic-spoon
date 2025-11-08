@@ -3,12 +3,14 @@ from multiprocessing.queues import Queue
 
 from diffusers import DiffusionPipeline
 
-from src.ctrls.ctrl_types import (
+from src.schemas.enums import (
+    EngineCommandEnums,
+    EngineResultEnums,
+)
+from src.schemas.types import (
     Engine,
     EngineCommand,
-    EngineCommandEnums,
     EngineResult,
-    EngineResultEnums,
 )
 
 from .pipe import (
@@ -67,19 +69,25 @@ class Generator:
                     logging.debug("received job")
                     if cmd.value is None:
                         self._result_queue.put(
-                            EngineResult(EngineResultEnums.ERROR, "job was None")
+                            EngineResult(
+                                result=EngineResultEnums.ERROR, value="job was None"
+                            )
                         )
                         continue
 
                     job = cmd.value
                     image = run_pipe(pipe, self._engine, job)
                     image.save(job.save_file_path)
-                    self._result_queue.put(EngineResult(EngineResultEnums.JOB, job))
+                    self._result_queue.put(
+                        EngineResult(result=EngineResultEnums.JOB, value=job)
+                    )
                 case EngineCommandEnums.CLOSE:
                     logging.debug("closing")
                     break
 
-        self._result_queue.put(EngineResult(EngineResultEnums.CLOSED, None))
+        self._result_queue.put(
+            EngineResult(result=EngineResultEnums.CLOSED, value=None)
+        )
 
 
 def start_generator(

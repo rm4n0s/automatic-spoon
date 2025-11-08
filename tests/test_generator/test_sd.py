@@ -5,28 +5,30 @@ import time
 import uuid
 from multiprocessing.queues import Queue
 
-from src.ctrls.ctrl_types import (
+from src.api.v1.generators.generator import start_generator
+from src.schemas.aimodel_schemas import AIModelSchema
+from src.schemas.enums import (
     AIModelBase,
     AIModelStatus,
     AIModelType,
-    Engine,
-    EngineCommand,
     EngineCommandEnums,
-    EngineResult,
     EngineResultEnums,
     EngineStatus,
-    Job,
     LongPromptTechnique,
-    Model,
     PathType,
     Scheduler,
     Variant,
 )
-from src.ctrls.generator.generator import start_generator
+from src.schemas.types import (
+    Engine,
+    EngineCommand,
+    EngineResult,
+    Job,
+)
 from tests.utils import read_test_config
 
 
-def test_sd_compel_rembg():
+def test_sd_compel():
     logging.basicConfig(level=logging.DEBUG)
     multiprocessing.set_start_method("spawn")
     cfg = read_test_config("test-config.yaml")
@@ -34,7 +36,7 @@ def test_sd_compel_rembg():
     assert cfg.checkpoint_sd.file_path is not None
     assert cfg.vae_sd.file_path is not None
 
-    sd_model = Model(
+    sd_model = AIModelSchema(
         id=1,
         name="sd_model",
         status=AIModelStatus.READY,
@@ -46,9 +48,9 @@ def test_sd_compel_rembg():
         tags="anime",
     )
 
-    vae_model = Model(
+    vae_model = AIModelSchema(
         id=1,
-        name="sd_model",
+        name="vae_model",
         status=AIModelStatus.READY,
         path=cfg.vae_sd.file_path,
         path_type=PathType.FILE,
@@ -100,7 +102,7 @@ def test_sd_compel_rembg():
     )
 
     start = time.time()
-    commandq.put(EngineCommand(EngineCommandEnums.JOB, job))
+    commandq.put(EngineCommand(command=EngineCommandEnums.JOB, value=job))
     res = resultq.get()
     assert res.result == EngineResultEnums.JOB
     end = time.time()
@@ -118,7 +120,7 @@ def test_sd_compel_rembg():
     )
 
     start = time.time()
-    commandq.put(EngineCommand(EngineCommandEnums.JOB, job))
+    commandq.put(EngineCommand(command=EngineCommandEnums.JOB, value=job))
     res = resultq.get()
     assert res.result == EngineResultEnums.JOB
     end = time.time()
@@ -126,7 +128,7 @@ def test_sd_compel_rembg():
     assert os.path.isfile(job.save_file_path)
     print(f"finished at {job.save_file_path}")
 
-    commandq.put(EngineCommand(EngineCommandEnums.CLOSE, None))
+    commandq.put(EngineCommand(command=EngineCommandEnums.CLOSE, value=None))
     res = resultq.get()
     assert res.result == EngineResultEnums.CLOSED
 

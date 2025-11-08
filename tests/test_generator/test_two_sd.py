@@ -5,28 +5,30 @@ import time
 import uuid
 from multiprocessing.queues import Queue
 
-from src.ctrls.ctrl_types import (
+from src.api.v1.generators.generator import start_generator
+from src.schemas.aimodel_schemas import AIModelSchema
+from src.schemas.enums import (
     AIModelBase,
     AIModelStatus,
     AIModelType,
-    Engine,
-    EngineCommand,
     EngineCommandEnums,
-    EngineResult,
     EngineResultEnums,
     EngineStatus,
-    Job,
     LongPromptTechnique,
-    Model,
     PathType,
     Scheduler,
     Variant,
 )
-from src.ctrls.generator.generator import start_generator
+from src.schemas.types import (
+    Engine,
+    EngineCommand,
+    EngineResult,
+    Job,
+)
 from tests.utils import read_test_config
 
 
-def test_sd_compel_rembg():
+def test_sd_compel():
     logging.basicConfig(level=logging.DEBUG)
     multiprocessing.set_start_method("spawn")
     cfg = read_test_config("test-config.yaml")
@@ -34,7 +36,7 @@ def test_sd_compel_rembg():
     assert cfg.checkpoint_sd.file_path is not None
     assert cfg.vae_sd.file_path is not None
 
-    sd_model = Model(
+    sd_model = AIModelSchema(
         id=1,
         name="sd_model",
         status=AIModelStatus.READY,
@@ -46,7 +48,7 @@ def test_sd_compel_rembg():
         tags="anime",
     )
 
-    vae_model = Model(
+    vae_model = AIModelSchema(
         id=1,
         name="sd_model",
         status=AIModelStatus.READY,
@@ -137,8 +139,8 @@ def test_sd_compel_rembg():
         negative_prompt="bad quality",
         save_file_path=f"/tmp/{id}.png",
     )
-    commandq1.put(EngineCommand(EngineCommandEnums.JOB, job1))
-    commandq2.put(EngineCommand(EngineCommandEnums.JOB, job2))
+    commandq1.put(EngineCommand(command=EngineCommandEnums.JOB, value=job1))
+    commandq2.put(EngineCommand(command=EngineCommandEnums.JOB, value=job2))
 
     res = resultq1.get()
     assert res.result == EngineResultEnums.JOB
@@ -152,8 +154,8 @@ def test_sd_compel_rembg():
     assert os.path.isfile(job2.save_file_path)
     print(f"finished at {job2.save_file_path}")
 
-    commandq1.put(EngineCommand(EngineCommandEnums.CLOSE, None))
-    commandq2.put(EngineCommand(EngineCommandEnums.CLOSE, None))
+    commandq1.put(EngineCommand(command=EngineCommandEnums.CLOSE, value=None))
+    commandq2.put(EngineCommand(command=EngineCommandEnums.CLOSE, value=None))
 
     res = resultq1.get()
     assert res.result == EngineResultEnums.CLOSED

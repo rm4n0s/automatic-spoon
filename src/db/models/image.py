@@ -1,7 +1,7 @@
 from tortoise import fields
 from tortoise.models import Model
 
-from src.ctrls.ctrl_types.enums import AIModelType, FileImageType
+from src.schemas.enums import AIModelType, FileImageType
 
 
 class Image(Model):

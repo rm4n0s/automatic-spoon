@@ -14,7 +14,7 @@ class Variant(enum.StrEnum):
 
 class PathType(enum.StrEnum):
     HUGGING_FACE = "hugging_face"
-    FILE = "FILE"
+    FILE = "file"
 
 
 class AIModelType(enum.StrEnum):

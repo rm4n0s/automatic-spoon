@@ -5,7 +5,8 @@ from controlnet_aux import MidasDetector, OpenposeDetector
 from diffusers.utils import load_image
 from PIL import Image
 
-from src.ctrls.ctrl_types import ControlNetPose, Job
+from src.schemas.enums import ControlNetPose
+from src.schemas.types import Job
 
 
 def prepare_pose_images(job: Job):

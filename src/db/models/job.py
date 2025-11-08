@@ -1,7 +1,7 @@
 from tortoise import fields
 from tortoise.models import Model
 
-from src.ctrls.ctrl_types.enums import JobStatus
+from src.schemas.enums import JobStatus
 
 
 class Job(Model):

@@ -1,0 +1,93 @@
+import argparse
+import os
+from contextlib import asynccontextmanager
+
+import uvicorn
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from pytsterrors import TSTError, tst_decorator
+
+from src.api.v1.router import api_router
+from src.core.config import read_config
+from src.core.tags.user_errors import user_error_responses
+from src.db.database import async_close_db, async_init_db
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    config_path = os.getenv("APP_CONFIG_PATH")
+    if not config_path:
+        raise RuntimeError("APP_CONFIG_PATH environment variable is required")
+    config = read_config(config_path)
+    app.state.config = config
+    await async_init_db(config.db_path)
+    yield
+    print("closing server")
+    await async_close_db()
+
+
+def add_exception_handlers(app: FastAPI):
+    @app.exception_handler(TSTError)
+    async def tst_error_handler(request: Request, exc: TSTError):
+        if exc.tag() in user_error_responses.keys():
+            error = user_error_responses.get(exc.tag())
+            return JSONResponse(
+                status_code=error["status"],  # pyright: ignore[reportOptionalSubscript, reportArgumentType]
+                content={"error": error["response"]},  # pyright: ignore[reportOptionalSubscript]
+            )
+        else:
+            return JSONResponse(
+                status_code=500,
+                content={"error": exc.message(), "for_admin": exc.to_json()},
+            )
+
+    @app.exception_handler(Exception)
+    async def unexpected_error_handler(request: Request, exc: Exception):
+        tst = TSTError(
+            "unexpected_error",
+            "an unexpected error:" + exc.__str__(),
+            other_exception=exc,
+        )
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Internal server error", "for_admin": tst.to_json()},
+        )
+
+
+app = FastAPI(lifespan=lifespan, title="Automatic Spoon")
+add_exception_handlers(app)
+app.include_router(api_router, prefix="/api/v1")
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog="Automatic Spoon",
+        description="It is a server for generating images",
+        epilog="Text at the bottom of help",
+    )
+
+    _ = parser.add_argument("--port", default=8080, help="the port")
+    _ = parser.add_argument("--host", default="localhost", help="the host")
+    _ = parser.add_argument(
+        "--config", default="config.yaml", help="the configuration file"
+    )
+    _ = parser.add_argument(
+        "--reload", default=False, help="reload server after source code change"
+    )
+    _ = parser.add_argument(
+        "--reload-dirs",
+        default="./src",
+        help="reload server after changes in specific folder",
+    )
+    args = parser.parse_args()
+
+    print(args.config)
+    os.environ["APP_CONFIG_PATH"] = args.config
+
+    uvicorn.run(
+        "src.main:app",
+        host=args.host,
+        port=args.port,
+        reload=args.reload,
+        reload_dirs=args.reload_dirs,
+    )

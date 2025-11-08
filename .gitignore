@@ -1,3 +1,8 @@
+# files produce when running applications on default configurations
+.generated_images
+*.sqlite3-shm
+*.sqlite3-wal
+
 # configuration to run tests for local models
 test-config.yaml
 

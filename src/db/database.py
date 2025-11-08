@@ -6,7 +6,7 @@ async def async_init_db(filepath: str) -> None:
         db_url=f"sqlite://{filepath}",
         modules={
             "models": [
-                "src.models",
+                "src.db.models",
             ],
         },
     )
