@@ -3,14 +3,14 @@ from multiprocessing.queues import Queue
 
 from diffusers import DiffusionPipeline
 
-from src.schemas.enums import (
-    EngineCommandEnums,
-    EngineResultEnums,
-)
-from src.schemas.types import (
-    Engine,
+from src.schemas.engine_schemas import (
     EngineCommand,
     EngineResult,
+    EngineSchema,
+)
+from src.schemas.enums import (
+    EngineCommandType,
+    EngineResultType,
 )
 
 from .pipe import (
@@ -27,11 +27,11 @@ from .pipe import (
 class Generator:
     _command_queue: Queue[EngineCommand]
     _result_queue: Queue[EngineResult]
-    _engine: Engine
+    _engine: EngineSchema
 
     def __init__(
         self,
-        engine: Engine,
+        engine: EngineSchema,
         commands_queue: Queue[EngineCommand],
         result_queue: Queue[EngineResult],
     ):
@@ -65,12 +65,12 @@ class Generator:
         while True:
             cmd = self._command_queue.get()
             match cmd.command:
-                case EngineCommandEnums.JOB:
+                case EngineCommandType.JOB:
                     logging.debug("received job")
                     if cmd.value is None:
                         self._result_queue.put(
                             EngineResult(
-                                result=EngineResultEnums.ERROR, value="job was None"
+                                result=EngineResultType.ERROR, value="job was None"
                             )
                         )
                         continue
@@ -79,19 +79,17 @@ class Generator:
                     image = run_pipe(pipe, self._engine, job)
                     image.save(job.save_file_path)
                     self._result_queue.put(
-                        EngineResult(result=EngineResultEnums.JOB, value=job)
+                        EngineResult(result=EngineResultType.JOB, value=job)
                     )
-                case EngineCommandEnums.CLOSE:
+                case EngineCommandType.CLOSE:
                     logging.debug("closing")
                     break
 
-        self._result_queue.put(
-            EngineResult(result=EngineResultEnums.CLOSED, value=None)
-        )
+        self._result_queue.put(EngineResult(result=EngineResultType.CLOSED, value=None))
 
 
 def start_generator(
-    engine: Engine,
+    engine: EngineSchema,
     commands_queue: Queue[EngineCommand],
     result_queue: Queue[EngineResult],
 ):

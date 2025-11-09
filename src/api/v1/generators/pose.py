@@ -4,12 +4,13 @@ import numpy as np  # For blank image creation
 from controlnet_aux import MidasDetector, OpenposeDetector
 from diffusers.utils import load_image
 from PIL import Image
+from pytsterrors import TSTError
 
-from src.schemas.enums import ControlNetPose
-from src.schemas.types import Job
+from src.schemas.enums import ControlNetType
+from src.schemas.job_schemas import JobSchema
 
 
-def prepare_pose_images(job: Job):
+def prepare_pose_images(job: JobSchema):
     controlnet_conditioning_scale = None
     conditioning_images = None
     if job.reference_image_path is not None:
@@ -17,17 +18,23 @@ def prepare_pose_images(job: Job):
         controlnet_conditioning_scale = []
         conditioning_images = []
         for pose in job.pose_images:
-            if pose.control_net_pose == ControlNetPose.OPENPOSE:
+            if pose.aimodel.control_net_type is None:
+                raise TSTError(
+                    "no-contron-net-type-in-model",
+                    f"control net type of aimodel with ID {pose.aimodel.id} is empty",
+                )
+
+            if pose.aimodel.control_net_type == ControlNetType.OPENPOSE:
                 openpose = OpenposeDetector.from_pretrained("lllyasviel/Annotators")
                 pose_image = openpose(reference_pose_image, include_hand=True)
                 conditioning_images.append(pose_image)
                 controlnet_conditioning_scale.append(pose.scale)
-            if pose.control_net_pose == ControlNetPose.MIDAS:
+            if pose.aimodel.control_net_type == ControlNetType.MIDAS:
                 midas = MidasDetector.from_pretrained("lllyasviel/Annotators")
                 depth_image = midas(reference_pose_image)
                 conditioning_images.append(depth_image)
                 controlnet_conditioning_scale.append(pose.scale)
-            if pose.control_net_pose == ControlNetPose.MEDIAPIPE:
+            if pose.aimodel.control_net_type == ControlNetType.MEDIAPIPE:
                 pose_image = get_mediapipe_pose(job.reference_image_path)
                 conditioning_images.append(pose_image)
                 controlnet_conditioning_scale.append(pose.scale)

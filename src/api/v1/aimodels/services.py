@@ -1,6 +1,8 @@
 from src.db.repositories.aimodel_repo import AIModelRepo
-from src.schemas.aimodel_schemas import AIModelSchema, AIModelSchemaAsUserInput
+from src.schemas.aimodel_schemas import AIModelSchema
 from src.schemas.enums import AIModelStatus
+
+from .schemas import AIModelSchemaAsUserInput
 
 
 class AIModelService:
@@ -9,7 +11,7 @@ class AIModelService:
     def __init__(self, repo: AIModelRepo):
         self.repo = repo
 
-    async def create(self, input: AIModelSchemaAsUserInput) -> AIModelSchema | None:
+    async def create(self, input: AIModelSchemaAsUserInput) -> AIModelSchema:
         data = AIModelSchema(
             name=input.name,
             status=AIModelStatus.READY,
@@ -22,4 +24,5 @@ class AIModelService:
             trigger_pos_words=input.trigger_pos_words,
             trigger_neg_words=input.trigger_neg_words,
         )
+
         return await self.repo.create(data)

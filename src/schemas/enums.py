@@ -22,8 +22,7 @@ class AIModelType(enum.StrEnum):
     EMBEDDING = "embedding"
     VAE = "vae"
     LORA = "lora"
-    CONTROLNET_OPENPOSE = "controlnet_openpose"
-    CONTROLNET_MIDAS = "controlnet_midas"
+    CONTROLNET = "controlnet"
 
 
 class AIModelBase(enum.StrEnum):
@@ -37,7 +36,7 @@ class LongPromptTechnique(enum.StrEnum):
     SDEMBED = "sdembed"
 
 
-class ControlNetPose(enum.StrEnum):
+class ControlNetType(enum.StrEnum):
     MIDAS = "midas"
     OPENPOSE = "openpose"
     MEDIAPIPE = "mediapipe"
@@ -69,12 +68,6 @@ class Scheduler(enum.StrEnum):
     DEIS = "deis"
 
 
-class EngineStatus(enum.StrEnum):
-    READY = "ready"
-    BUSY = "busy"
-    STOPPED = "stopped"
-
-
 class JobStatus(enum.StrEnum):
     WAITING = "waiting"
     PROCESSING = "processing"
@@ -86,12 +79,12 @@ class FileImageType(enum.StrEnum):
     PNG = "png"
 
 
-class EngineCommandEnums(enum.StrEnum):
+class EngineCommandType(enum.StrEnum):
     JOB = "job"
     CLOSE = "close"
 
 
-class EngineResultEnums(enum.StrEnum):
+class EngineResultType(enum.StrEnum):
     JOB = "job"
     ERROR = "error"
     CLOSED = "closed"

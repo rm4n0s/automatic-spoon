@@ -7,6 +7,7 @@ from src.schemas.enums import (
     AIModelBase,
     AIModelStatus,
     AIModelType,
+    ControlNetType,
     PathType,
     Variant,
 )
@@ -20,6 +21,7 @@ class AIModel(Model):
     path = fields.TextField()
     trigger_pos_words = fields.TextField()
     trigger_neg_words = fields.TextField()
+    control_net_type = fields.CharEnumField(enum_type=ControlNetType, null=True)
     path_type = fields.CharEnumField(enum_type=PathType)
     variant = fields.CharEnumField(enum_type=Variant)
     model_type = fields.CharEnumField(enum_type=AIModelType)

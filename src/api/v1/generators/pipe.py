@@ -27,6 +27,10 @@ from pytsterrors import TSTError
 from sd_embed.embedding_funcs import get_weighted_text_embeddings_sdxl
 
 from src.schemas.aimodel_schemas import AIModelSchema
+from src.schemas.engine_schemas import (
+    EngineSchema,
+    LoraAndWeight,
+)
 from src.schemas.enums import (
     AIModelBase,
     LongPromptTechnique,
@@ -34,11 +38,7 @@ from src.schemas.enums import (
     Scheduler,
     Variant,
 )
-from src.schemas.types import (
-    Engine,
-    Job,
-    Lora,
-)
+from src.schemas.job_schemas import JobSchema
 
 from .pose import prepare_pose_images
 
@@ -204,16 +204,16 @@ def create_pipe(
     else:
         raise TSTError(
             "combination-not-found",
-            "Combination of checkpoint model base, path type and control nets not found while creating the pipe",
+            "The selected combination of checkpoint model base, path type and control nets not found while creating the pipe",
         )
 
     return pipe
 
 
-def load_loras(pipe: DiffusionPipeline, loras: list[Lora]):
+def load_loras(pipe: DiffusionPipeline, loras: list[LoraAndWeight]):
     for lora in loras:
         print(lora)
-        lora_path = lora.model.path  # Replace or comment out
+        lora_path = lora.aimodel.path  # Replace or comment out
         lora_weight = lora.weight
         if lora_path:
             pipe.load_lora_weights(lora_path)
@@ -302,7 +302,7 @@ def set_scheduler(pipe: DiffusionPipeline, scheduler_enum: Scheduler):
             pipe.scheduler = DEISMultistepScheduler.from_config(pipe.scheduler.config)
 
 
-def run_pipe(pipe, engine: Engine, job: Job):  # pyright: ignore[reportMissingParameterType,reportUnknownParameterType]
+def run_pipe(pipe, engine: EngineSchema, job: JobSchema):  # pyright: ignore[reportMissingParameterType,reportUnknownParameterType]
     seed = job.seed or engine.seed
     guidance_scale = job.guidance_scale or engine.guidance_scale
     num_inference_steps = job.steps or engine.steps

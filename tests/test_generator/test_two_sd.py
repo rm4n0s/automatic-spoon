@@ -7,24 +7,24 @@ from multiprocessing.queues import Queue
 
 from src.api.v1.generators.generator import start_generator
 from src.schemas.aimodel_schemas import AIModelSchema
+from src.schemas.engine_schemas import (
+    EngineCommand,
+    EngineResult,
+    EngineSchema,
+)
 from src.schemas.enums import (
     AIModelBase,
     AIModelStatus,
     AIModelType,
-    EngineCommandEnums,
-    EngineResultEnums,
+    EngineCommandType,
+    EngineResultType,
     EngineStatus,
     LongPromptTechnique,
     PathType,
     Scheduler,
     Variant,
 )
-from src.schemas.types import (
-    Engine,
-    EngineCommand,
-    EngineResult,
-    Job,
-)
+from src.schemas.job_schemas import JobSchema
 from tests.utils import read_test_config
 
 
@@ -60,10 +60,9 @@ def test_sd_compel():
         tags="anime",
     )
 
-    engine1 = Engine(
+    engine1 = EngineSchema(
         id=1,
         name="test sd compel",
-        status=EngineStatus.READY,
         long_prompt_technique=LongPromptTechnique.COMPEL,
         checkpoint_model=sd_model,
         vae_model=vae_model,
@@ -78,10 +77,9 @@ def test_sd_compel():
         steps=30,
     )
 
-    engine2 = Engine(
+    engine2 = EngineSchema(
         id=2,
         name="test sd compel 2",
-        status=EngineStatus.READY,
         long_prompt_technique=LongPromptTechnique.COMPEL,
         checkpoint_model=sd_model,
         vae_model=vae_model,
@@ -125,7 +123,7 @@ def test_sd_compel():
     time.sleep(60)
     id = uuid.uuid4()
     logging.debug("send job")
-    job1 = Job(
+    job1 = JobSchema(
         id=1,
         prompt="a princess, (white background:1.5)",
         negative_prompt="bad quality",
@@ -133,32 +131,32 @@ def test_sd_compel():
     )
     id = uuid.uuid4()
     logging.debug("send job to second process")
-    job2 = Job(
+    job2 = JobSchema(
         id=2,
         prompt="a prince, (white background:1.5)",
         negative_prompt="bad quality",
         save_file_path=f"/tmp/{id}.png",
     )
-    commandq1.put(EngineCommand(command=EngineCommandEnums.JOB, value=job1))
-    commandq2.put(EngineCommand(command=EngineCommandEnums.JOB, value=job2))
+    commandq1.put(EngineCommand(command=EngineCommandType.JOB, value=job1))
+    commandq2.put(EngineCommand(command=EngineCommandType.JOB, value=job2))
 
     res = resultq1.get()
-    assert res.result == EngineResultEnums.JOB
+    assert res.result == EngineResultType.JOB
 
     assert os.path.isfile(job1.save_file_path)
     print(f"finished at {job1.save_file_path}")
 
     res = resultq2.get()
-    assert res.result == EngineResultEnums.JOB
+    assert res.result == EngineResultType.JOB
 
     assert os.path.isfile(job2.save_file_path)
     print(f"finished at {job2.save_file_path}")
 
-    commandq1.put(EngineCommand(command=EngineCommandEnums.CLOSE, value=None))
-    commandq2.put(EngineCommand(command=EngineCommandEnums.CLOSE, value=None))
+    commandq1.put(EngineCommand(command=EngineCommandType.CLOSE, value=None))
+    commandq2.put(EngineCommand(command=EngineCommandType.CLOSE, value=None))
 
     res = resultq1.get()
-    assert res.result == EngineResultEnums.CLOSED
+    assert res.result == EngineResultType.CLOSED
 
     res = resultq2.get()
-    assert res.result == EngineResultEnums.CLOSED
+    assert res.result == EngineResultType.CLOSED

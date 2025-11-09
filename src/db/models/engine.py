@@ -3,8 +3,7 @@ from tortoise.models import Model
 
 from src.schemas.enums import (
     AIModelType,
-    ControlNetPose,
-    EngineStatus,
+    ControlNetType,
     LongPromptTechnique,
     Scheduler,
 )
@@ -13,9 +12,8 @@ from src.schemas.enums import (
 class Engine(Model):
     id = fields.IntField(primary_key=True)
     name = fields.TextField()
-    status = fields.CharEnumField(enum_type=EngineStatus)
     long_prompt_technique = fields.CharEnumField(enum_type=LongPromptTechnique)
-    controlnet = fields.CharEnumField(enum_type=ControlNetPose)
+    controlnet = fields.CharEnumField(enum_type=ControlNetType)
     scheduler = fields.CharEnumField(enum_type=Scheduler)
     guidance_scale = fields.FloatField()
     seed = fields.IntField()

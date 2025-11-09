@@ -1,3 +1,6 @@
+# for private notes on the project
+PRIVATE-NOTES.md
+
 # files produce when running applications on default configurations
 .generated_images
 *.sqlite3-shm

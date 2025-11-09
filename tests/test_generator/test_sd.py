@@ -7,24 +7,24 @@ from multiprocessing.queues import Queue
 
 from src.api.v1.generators.generator import start_generator
 from src.schemas.aimodel_schemas import AIModelSchema
+from src.schemas.engine_schemas import (
+    EngineCommand,
+    EngineResult,
+    EngineSchema,
+)
 from src.schemas.enums import (
     AIModelBase,
     AIModelStatus,
     AIModelType,
-    EngineCommandEnums,
-    EngineResultEnums,
+    EngineCommandType,
+    EngineResultType,
     EngineStatus,
     LongPromptTechnique,
     PathType,
     Scheduler,
     Variant,
 )
-from src.schemas.types import (
-    Engine,
-    EngineCommand,
-    EngineResult,
-    Job,
-)
+from src.schemas.job_schemas import JobSchema
 from tests.utils import read_test_config
 
 
@@ -60,10 +60,9 @@ def test_sd_compel():
         tags="anime",
     )
 
-    engine = Engine(
+    engine = EngineSchema(
         id=1,
         name="test sd compel",
-        status=EngineStatus.READY,
         long_prompt_technique=LongPromptTechnique.COMPEL,
         checkpoint_model=sd_model,
         vae_model=vae_model,
@@ -94,7 +93,7 @@ def test_sd_compel():
     time.sleep(60)
     id = uuid.uuid4()
     logging.debug("send job")
-    job = Job(
+    job = JobSchema(
         id=1,
         prompt="a king, (white background:1.5)",
         negative_prompt="bad quality",
@@ -102,9 +101,9 @@ def test_sd_compel():
     )
 
     start = time.time()
-    commandq.put(EngineCommand(command=EngineCommandEnums.JOB, value=job))
+    commandq.put(EngineCommand(command=EngineCommandType.JOB, value=job))
     res = resultq.get()
-    assert res.result == EngineResultEnums.JOB
+    assert res.result == EngineResultType.JOB
     end = time.time()
     print(f"first job took {end - start}")
     assert os.path.isfile(job.save_file_path)
@@ -112,7 +111,7 @@ def test_sd_compel():
 
     id = uuid.uuid4()
     logging.debug("send job")
-    job = Job(
+    job = JobSchema(
         id=1,
         prompt="a queen, (white background:1.5)",
         negative_prompt="bad quality",
@@ -120,16 +119,16 @@ def test_sd_compel():
     )
 
     start = time.time()
-    commandq.put(EngineCommand(command=EngineCommandEnums.JOB, value=job))
+    commandq.put(EngineCommand(command=EngineCommandType.JOB, value=job))
     res = resultq.get()
-    assert res.result == EngineResultEnums.JOB
+    assert res.result == EngineResultType.JOB
     end = time.time()
     print(f"second job took {end - start}")
     assert os.path.isfile(job.save_file_path)
     print(f"finished at {job.save_file_path}")
 
-    commandq.put(EngineCommand(command=EngineCommandEnums.CLOSE, value=None))
+    commandq.put(EngineCommand(command=EngineCommandType.CLOSE, value=None))
     res = resultq.get()
-    assert res.result == EngineResultEnums.CLOSED
+    assert res.result == EngineResultType.CLOSED
 
     logging.debug(res)

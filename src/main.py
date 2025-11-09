@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from pytsterrors import TSTError, tst_decorator
+from pytsterrors import TSTError
 
 from src.api.v1.router import api_router
 from src.core.config import read_config
@@ -29,11 +29,11 @@ async def lifespan(app: FastAPI):
 def add_exception_handlers(app: FastAPI):
     @app.exception_handler(TSTError)
     async def tst_error_handler(request: Request, exc: TSTError):
-        if exc.tag() in user_error_responses.keys():
-            error = user_error_responses.get(exc.tag())
+        error = user_error_responses.get(exc.tag())
+        if error is not None:
             return JSONResponse(
-                status_code=error["status"],  # pyright: ignore[reportOptionalSubscript, reportArgumentType]
-                content={"error": error["response"]},  # pyright: ignore[reportOptionalSubscript]
+                status_code=error.status,
+                content={"error": error.response},
             )
         else:
             return JSONResponse(
