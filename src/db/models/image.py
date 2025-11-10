@@ -1,10 +1,11 @@
 from tortoise import fields
 from tortoise.models import Model
 
+from src.db.models.common import TimestampMixin
 from src.schemas.enums import AIModelType, FileImageType
 
 
-class Image(Model):
+class Image(TimestampMixin, Model):
     id = fields.IntField(primary_key=True)
     engine_id = fields.IntField()
     prompt = fields.TextField()

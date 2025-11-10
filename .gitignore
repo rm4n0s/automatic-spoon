@@ -3,6 +3,7 @@ PRIVATE-NOTES.md
 
 # files produce when running applications on default configurations
 .generated_images
+.huggingface
 *.sqlite3-shm
 *.sqlite3-wal
 

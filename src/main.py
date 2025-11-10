@@ -1,5 +1,6 @@
 import argparse
 import os
+import typing
 from contextlib import asynccontextmanager
 
 import uvicorn
@@ -8,7 +9,7 @@ from fastapi.responses import JSONResponse
 from pytsterrors import TSTError
 
 from src.api.v1.router import api_router
-from src.core.config import read_config
+from src.core.config import enable_hugging_face_envs, read_config
 from src.core.tags.user_errors import user_error_responses
 from src.db.database import async_close_db, async_init_db
 
@@ -20,6 +21,7 @@ async def lifespan(app: FastAPI):
         raise RuntimeError("APP_CONFIG_PATH environment variable is required")
     config = read_config(config_path)
     app.state.config = config
+    enable_hugging_face_envs(config)
     await async_init_db(config.db_path)
     yield
     print("closing server")
@@ -31,9 +33,13 @@ def add_exception_handlers(app: FastAPI):
     async def tst_error_handler(request: Request, exc: TSTError):
         error = user_error_responses.get(exc.tag())
         if error is not None:
+            content: dict[str, typing.Any] = {"error": error.response}
+            meta = exc.metadata()
+            if meta is not None:
+                content["metadata"] = meta
             return JSONResponse(
                 status_code=error.status,
-                content={"error": error.response},
+                content=content,
             )
         else:
             return JSONResponse(

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from .aimodel_schemas import AIModelSchema
 from .enums import (
@@ -28,7 +28,7 @@ class LoraAndWeight(BaseModel):
 class EngineSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)  # pyright: ignore[reportUnannotatedClassAttribute]
 
-    id: int
+    id: int | None = Field(default=None)
     name: str
     checkpoint_model: AIModelSchema
     lora_models: list[LoraAndWeight]

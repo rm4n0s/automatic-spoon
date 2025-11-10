@@ -6,6 +6,7 @@ import uuid
 from multiprocessing.queues import Queue
 
 from src.api.v1.generators.generator import start_generator
+from src.core.config import enable_hugging_face_envs, read_config
 from src.schemas.aimodel_schemas import AIModelSchema
 from src.schemas.engine_schemas import (
     EngineCommand,
@@ -18,7 +19,6 @@ from src.schemas.enums import (
     AIModelType,
     EngineCommandType,
     EngineResultType,
-    EngineStatus,
     LongPromptTechnique,
     PathType,
     Scheduler,
@@ -31,6 +31,8 @@ from tests.utils import read_test_config
 def test_sd_compel():
     logging.basicConfig(level=logging.DEBUG)
     multiprocessing.set_start_method("spawn")
+    config = read_config("config.yaml")
+    enable_hugging_face_envs(config)
     cfg = read_test_config("test-config.yaml")
     print(cfg)
     assert cfg.checkpoint_sd.file_path is not None

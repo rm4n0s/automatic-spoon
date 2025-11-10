@@ -1,8 +1,7 @@
-from typing import final
-
 from tortoise import fields
 from tortoise.models import Model
 
+from src.db.models.common import TimestampMixin
 from src.schemas.enums import (
     AIModelBase,
     AIModelStatus,
@@ -13,7 +12,7 @@ from src.schemas.enums import (
 )
 
 
-class AIModel(Model):
+class AIModel(TimestampMixin, Model):
     id = fields.IntField(primary_key=True)
     name = fields.TextField()
     status = fields.CharEnumField(enum_type=AIModelStatus)

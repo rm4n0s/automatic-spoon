@@ -1,10 +1,7 @@
 # Tasks
 
-- Implement engine's:
-    - POST /engines/
-    - GET /engines/{id}
-    - GET /engines/
-- Implement generator's:
+
+- Implement generator's MVP REST API:
     - POST /generators/ that takes engine's id as input to create the generator and responds with generator's ID
     - POST /generators/{id}/start starts the generator in a multiprocess
     - GET /generators/ and GET /generators/{id} that returns generator's status
@@ -19,3 +16,12 @@
 
 - create tests to implement and check validations for POST /aimodels, /engines, /generators and /jobs
 - create tests for all generator's actions
+
+
+
+## Done
+### Nov 11 2025
+- Implement engine's MVP REST API:
+    - POST /engines/ ✅☑
+    - GET /engines/{id}
+    - GET /engines/
