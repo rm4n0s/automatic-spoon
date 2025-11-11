@@ -1,12 +1,11 @@
 from pytsterrors.exception import TSTError
 
+from src.api.v1.aimodels.repositories import AIModelRepo
+from src.core.enums import AIModelType
 from src.core.tags.user_errors import WRONG_INPUT
-from src.db.repositories.aimodel_repo import AIModelRepo
-from src.db.repositories.engine_repo import EngineRepo
-from src.schemas.engine_schemas import EngineSchema, LoraAndWeight
-from src.schemas.enums import AIModelType
 
-from .schemas import EngineSchemaAsUserInput
+from .repositories import EngineRepo
+from .schemas import EngineSchema, EngineSchemaAsUserInput, LoraAndWeight
 
 
 class EngineService:

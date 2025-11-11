@@ -26,19 +26,19 @@ from diffusers import (
 from pytsterrors import TSTError
 from sd_embed.embedding_funcs import get_weighted_text_embeddings_sdxl
 
-from src.schemas.aimodel_schemas import AIModelSchema
-from src.schemas.engine_schemas import (
+from src.api.v1.aimodels.schemas import AIModelSchema
+from src.api.v1.engines.schemas import (
     EngineSchema,
     LoraAndWeight,
 )
-from src.schemas.enums import (
+from src.api.v1.jobs.schemas import JobSchema
+from src.core.enums import (
     AIModelBase,
     LongPromptTechnique,
     PathType,
     Scheduler,
     Variant,
 )
-from src.schemas.job_schemas import JobSchema
 
 from .pose import prepare_pose_images
 
@@ -72,6 +72,7 @@ def create_controlnets(cnet_models: list[AIModelSchema]) -> list[ControlNetModel
 def create_vae(vae: AIModelSchema) -> AutoencoderKL:
     variant = str(vae.variant)
     torch_dtype = torch.float16
+
     if vae.variant == Variant.FP32:
         torch_dtype = torch.float32
 

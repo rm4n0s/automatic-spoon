@@ -1,10 +1,8 @@
 from fastapi import APIRouter, Depends, status
 
-from src.api.v1.aimodels.services import AIModelService
-from src.db.repositories.aimodel_repo import AIModelRepo
-from src.schemas.aimodel_schemas import AIModelSchema
-
-from .schemas import AIModelSchemaAsUserInput
+from .repositories import AIModelRepo
+from .schemas import AIModelSchema, AIModelSchemaAsUserInput
+from .services import AIModelService
 
 router = APIRouter()
 

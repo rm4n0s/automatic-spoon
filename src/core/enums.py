@@ -74,17 +74,25 @@ class JobStatus(enum.StrEnum):
     FINISHED = "finished"
 
 
+class GeneratorStatus(enum.StrEnum):
+    STARTING = "starting"
+    FREE = "free"
+    WORKING = "working"
+    STOPPING = "stopping"
+    STOPPED = "stopped"
+
+
 class FileImageType(enum.StrEnum):
     JPG = "jpg"
     PNG = "png"
 
 
-class EngineCommandType(enum.StrEnum):
+class GeneratorCommandType(enum.StrEnum):
     JOB = "job"
     CLOSE = "close"
 
 
-class EngineResultType(enum.StrEnum):
+class GeneratorResultType(enum.StrEnum):
     JOB = "job"
     ERROR = "error"
     CLOSED = "closed"

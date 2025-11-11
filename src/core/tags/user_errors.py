@@ -3,6 +3,7 @@ from typing import LiteralString
 
 AIMODEL_NOT_FOUND_ERROR = "aimodel-not-found"
 ENGINE_NOT_FOUND_ERROR = "engine-not-found"
+GENERATOR_NOT_FOUND_ERROR = "generator-not-found"
 WRONG_INPUT = "wrong-input"
 
 
@@ -18,6 +19,9 @@ user_error_responses = {
     ),
     ENGINE_NOT_FOUND_ERROR: UserResponse(
         response="We couldn't find the engine you were looking for.", status=404
+    ),
+    GENERATOR_NOT_FOUND_ERROR: UserResponse(
+        response="We couldn't find the generator you were looking for.", status=404
     ),
     WRONG_INPUT: UserResponse(response="The input is wrong", status=400),
 }

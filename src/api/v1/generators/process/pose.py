@@ -6,8 +6,8 @@ from diffusers.utils import load_image
 from PIL import Image
 from pytsterrors import TSTError
 
-from src.schemas.enums import ControlNetType
-from src.schemas.job_schemas import JobSchema
+from src.api.v1.jobs.schemas import JobSchema
+from src.core.enums import ControlNetType
 
 
 def prepare_pose_images(job: JobSchema):

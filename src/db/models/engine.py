@@ -1,12 +1,12 @@
 from tortoise import fields
 from tortoise.models import Model
 
-from src.db.models.common import TimestampMixin
-from src.schemas.enums import (
+from src.core.enums import (
     AIModelType,
     LongPromptTechnique,
     Scheduler,
 )
+from src.db.models.common import TimestampMixin
 
 
 class Engine(TimestampMixin, Model):

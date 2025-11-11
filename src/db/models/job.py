@@ -1,8 +1,8 @@
 from tortoise import fields
 from tortoise.models import Model
 
+from src.core.enums import JobStatus
 from src.db.models.common import TimestampMixin
-from src.schemas.enums import JobStatus
 
 
 class Job(TimestampMixin, Model):

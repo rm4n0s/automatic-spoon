@@ -1,9 +1,10 @@
 from pytsterrors import TSTError
 
+from src.core.enums import AIModelType
 from src.core.tags.user_errors import AIMODEL_NOT_FOUND_ERROR
 from src.db.models import AIModel
-from src.schemas.aimodel_schemas import AIModelSchema
-from src.schemas.enums import AIModelType
+
+from .schemas import AIModelSchema
 
 
 class AIModelRepo:

@@ -3,14 +3,14 @@ from multiprocessing.queues import Queue
 
 from diffusers import DiffusionPipeline
 
-from src.schemas.engine_schemas import (
-    EngineCommand,
-    EngineResult,
+from src.api.v1.engines.schemas import (
+    GeneratorCommand,
+    GeneratorResult,
     EngineSchema,
 )
-from src.schemas.enums import (
-    EngineCommandType,
-    EngineResultType,
+from src.core.enums import (
+    GeneratorCommandType,
+    GeneratorResultType,
 )
 
 from .pipe import (
@@ -24,16 +24,16 @@ from .pipe import (
 )
 
 
-class Generator:
-    _command_queue: Queue[EngineCommand]
-    _result_queue: Queue[EngineResult]
+class GeneratorProcess:
+    _command_queue: Queue[GeneratorCommand]
+    _result_queue: Queue[GeneratorResult]
     _engine: EngineSchema
 
     def __init__(
         self,
         engine: EngineSchema,
-        commands_queue: Queue[EngineCommand],
-        result_queue: Queue[EngineResult],
+        commands_queue: Queue[GeneratorCommand],
+        result_queue: Queue[GeneratorResult],
     ):
         self._command_queue = commands_queue
         self._result_queue = result_queue
@@ -65,12 +65,12 @@ class Generator:
         while True:
             cmd = self._command_queue.get()
             match cmd.command:
-                case EngineCommandType.JOB:
+                case GeneratorCommandType.JOB:
                     logging.debug("received job")
                     if cmd.value is None:
                         self._result_queue.put(
-                            EngineResult(
-                                result=EngineResultType.ERROR, value="job was None"
+                            GeneratorResult(
+                                result=GeneratorResultType.ERROR, value="job was None"
                             )
                         )
                         continue
@@ -79,20 +79,20 @@ class Generator:
                     image = run_pipe(pipe, self._engine, job)
                     image.save(job.save_file_path)
                     self._result_queue.put(
-                        EngineResult(result=EngineResultType.JOB, value=job)
+                        GeneratorResult(result=GeneratorResultType.JOB, value=job)
                     )
-                case EngineCommandType.CLOSE:
+                case GeneratorCommandType.CLOSE:
                     logging.debug("closing")
                     break
 
-        self._result_queue.put(EngineResult(result=EngineResultType.CLOSED, value=None))
+        self._result_queue.put(GeneratorResult(result=GeneratorResultType.CLOSED, value=None))
 
 
 def start_generator(
     engine: EngineSchema,
-    commands_queue: Queue[EngineCommand],
-    result_queue: Queue[EngineResult],
+    commands_queue: Queue[GeneratorCommand],
+    result_queue: Queue[GeneratorResult],
 ):
-    generator = Generator(engine, commands_queue, result_queue)
+    generator = GeneratorProcess(engine, commands_queue, result_queue)
     logging.debug(f"start generator with engine named {engine.name} and id {engine.id}")
     generator.listening()

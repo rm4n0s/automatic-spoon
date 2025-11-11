@@ -1,8 +1,8 @@
 from tortoise import fields
 from tortoise.models import Model
 
+from src.core.enums import AIModelType, FileImageType
 from src.db.models.common import TimestampMixin
-from src.schemas.enums import AIModelType, FileImageType
 
 
 class Image(TimestampMixin, Model):

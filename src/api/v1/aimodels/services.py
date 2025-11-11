@@ -1,8 +1,7 @@
-from src.db.repositories.aimodel_repo import AIModelRepo
-from src.schemas.aimodel_schemas import AIModelSchema
-from src.schemas.enums import AIModelStatus
+from src.core.enums import AIModelStatus
 
-from .schemas import AIModelSchemaAsUserInput
+from .repositories import AIModelRepo
+from .schemas import AIModelSchema, AIModelSchemaAsUserInput
 
 
 class AIModelService:

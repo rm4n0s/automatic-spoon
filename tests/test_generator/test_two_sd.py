@@ -5,26 +5,28 @@ import time
 import uuid
 from multiprocessing.queues import Queue
 
-from src.api.v1.generators.generator import start_generator
-from src.core.config import enable_hugging_face_envs, read_config
-from src.schemas.aimodel_schemas import AIModelSchema
-from src.schemas.engine_schemas import (
-    EngineCommand,
-    EngineResult,
+from src.api.v1.aimodels.schemas import AIModelSchema
+from src.api.v1.engines.schemas import (
     EngineSchema,
 )
-from src.schemas.enums import (
+from src.api.v1.generators.process.generator import start_generator
+from src.api.v1.generators.schemas import (
+    GeneratorCommand,
+    GeneratorResult,
+)
+from src.api.v1.jobs.schemas import JobSchema
+from src.core.config import enable_hugging_face_envs, read_config
+from src.core.enums import (
     AIModelBase,
     AIModelStatus,
     AIModelType,
-    EngineCommandType,
-    EngineResultType,
+    GeneratorCommandType,
+    GeneratorResultType,
     LongPromptTechnique,
     PathType,
     Scheduler,
     Variant,
 )
-from src.schemas.job_schemas import JobSchema
 from tests.utils import read_test_config
 
 
@@ -96,11 +98,11 @@ def test_sd_compel():
         steps=30,
     )
 
-    commandq1: Queue[EngineCommand] = multiprocessing.Queue()
-    resultq1: Queue[EngineResult] = multiprocessing.Queue()
+    commandq1: Queue[GeneratorCommand] = multiprocessing.Queue()
+    resultq1: Queue[GeneratorResult] = multiprocessing.Queue()
 
-    commandq2: Queue[EngineCommand] = multiprocessing.Queue()
-    resultq2: Queue[EngineResult] = multiprocessing.Queue()
+    commandq2: Queue[GeneratorCommand] = multiprocessing.Queue()
+    resultq2: Queue[GeneratorResult] = multiprocessing.Queue()
 
     p1 = multiprocessing.Process(
         target=start_generator,
@@ -139,26 +141,26 @@ def test_sd_compel():
         negative_prompt="bad quality",
         save_file_path=f"/tmp/{id}.png",
     )
-    commandq1.put(EngineCommand(command=EngineCommandType.JOB, value=job1))
-    commandq2.put(EngineCommand(command=EngineCommandType.JOB, value=job2))
+    commandq1.put(GeneratorCommand(command=GeneratorCommandType.JOB, value=job1))
+    commandq2.put(GeneratorCommand(command=GeneratorCommandType.JOB, value=job2))
 
     res = resultq1.get()
-    assert res.result == EngineResultType.JOB
+    assert res.result == GeneratorResultType.JOB
 
     assert os.path.isfile(job1.save_file_path)
     print(f"finished at {job1.save_file_path}")
 
     res = resultq2.get()
-    assert res.result == EngineResultType.JOB
+    assert res.result == GeneratorResultType.JOB
 
     assert os.path.isfile(job2.save_file_path)
     print(f"finished at {job2.save_file_path}")
 
-    commandq1.put(EngineCommand(command=EngineCommandType.CLOSE, value=None))
-    commandq2.put(EngineCommand(command=EngineCommandType.CLOSE, value=None))
+    commandq1.put(GeneratorCommand(command=GeneratorCommandType.CLOSE, value=None))
+    commandq2.put(GeneratorCommand(command=GeneratorCommandType.CLOSE, value=None))
 
     res = resultq1.get()
-    assert res.result == EngineResultType.CLOSED
+    assert res.result == GeneratorResultType.CLOSED
 
     res = resultq2.get()
-    assert res.result == EngineResultType.CLOSED
+    assert res.result == GeneratorResultType.CLOSED

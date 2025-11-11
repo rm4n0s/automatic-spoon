@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 
-from .aimodel_schemas import AIModelSchema
-from .enums import (
+from src.api.v1.aimodels.schemas import AIModelSchema
+from src.core.enums import (
     FileImageType,
     Scheduler,
 )
