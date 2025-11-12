@@ -1,5 +1,5 @@
 # for private notes on the project
-PRIVATE-NOTES.md
+.private/
 
 # files produce when running applications on default configurations
 .generated_images

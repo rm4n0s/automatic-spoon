@@ -2,8 +2,8 @@
 
 
 - Implement generator's MVP REST API:
-    - [20%] PATCH /generators/{id}/start starts the generator in a multiprocess
-    - [20%] PATCH /generators/{id}/stop to stop the generator and delete the process, it will wait until job finish
+    - [30%] PATCH /generators/{id}/start starts the generator in a multiprocess
+    - [30%] PATCH /generators/{id}/stop to stop the generator and delete the process, it will wait until job finish
     - PATCH /generators/{id}/stop/force to stop the generator and delete the process, it will NOT wait for the job finish
     - DELETE /generators/{id}
     - DELETE /generators/{id}/force to stop jobs and delete the generator

@@ -11,6 +11,8 @@ class GeneratorCommand(BaseModel):
 
 
 class GeneratorResult(BaseModel):
+    generator_name: str
+    generator_id: int
     result: GeneratorResultType
     value: JobSchema | str | None
 

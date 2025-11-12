@@ -1,13 +1,17 @@
 import argparse
+import logging
+import multiprocessing
 import os
 import typing
 from contextlib import asynccontextmanager
 
 import uvicorn
+from dishka.integrations.fastapi import setup_dishka
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from pytsterrors import TSTError
 
+from src.api.v1.di_container import container
 from src.api.v1.router import api_router
 from src.core.config import enable_hugging_face_envs, read_config
 from src.core.tags.user_errors import user_error_responses
@@ -61,11 +65,14 @@ def add_exception_handlers(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan, title="Automatic Spoon")
+setup_dishka(container, app)
 add_exception_handlers(app)
 app.include_router(api_router, prefix="/api/v1")
 
 
 def main():
+    logging.basicConfig(level=logging.DEBUG)
+    multiprocessing.set_start_method("spawn")
     parser = argparse.ArgumentParser(
         prog="Automatic Spoon",
         description="It is a server for generating images",

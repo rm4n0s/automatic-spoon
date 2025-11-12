@@ -14,7 +14,10 @@ source .venv/bin/activate
 pip install --upgrade pip
 bash install.sh
 ```
-
+Install torch for your GPU or run this script but it may not install the correct torch version
+```bash
+bash install-torch.sh
+```
 ## Run
 ```bash
 source .venv/bin/activate
