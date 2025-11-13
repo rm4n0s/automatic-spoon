@@ -65,6 +65,14 @@ class GeneratorProcess:
 
     def listening(self):
         pipe = self._create_pipe()
+        self._result_queue.put(
+            GeneratorResult(
+                generator_name=self._name,
+                generator_id=self._id,
+                result=GeneratorResultType.READY,
+                value=None,
+            )
+        )
         while True:
             cmd = self._command_queue.get()
             match cmd.command:

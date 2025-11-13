@@ -18,16 +18,21 @@ class GeneratorRepoProvider(Provider):
 class GeneratorServiceProvider(Provider):
     @provide(scope=Scope.REQUEST)
     def provide_service(
-        self, generator_repo: GeneratorRepo, engine_repo: EngineRepo
+        self,
+        generator_repo: GeneratorRepo,
+        engine_repo: EngineRepo,
+        manager: ProcessManager,
     ) -> GeneratorService:
-        return GeneratorService(generator_repo, engine_repo)
+        return GeneratorService(generator_repo, engine_repo, manager)
 
 
 class ProcessManagerProvider(Provider):
     scope = Scope.APP  # <-- singleton for the whole app
-    manager = ProcessManager()
 
     @provide
-    def process_manager(self) -> Iterable[ProcessManager]:
-        yield self.manager
+    def process_manager(
+        self, generator_repo: GeneratorRepo
+    ) -> Iterable[ProcessManager]:
+        manager = ProcessManager(generator_repo)
+        yield manager
         # No cleanup: thread has no stop, runs until process exit

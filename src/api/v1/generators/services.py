@@ -1,6 +1,7 @@
 from pytsterrors import TSTError
 
 from src.api.v1.engines.repositories import EngineRepo
+from src.api.v1.generators.manager import ProcessManager
 from src.api.v1.generators.repositories import GeneratorRepo
 from src.api.v1.generators.schemas import GeneratorSchema, GeneratorSchemaAsUserInput
 from src.core.enums import GeneratorStatus
@@ -10,10 +11,17 @@ from src.core.tags.user_errors import GENERATOR_NOT_FOUND_ERROR, WRONG_INPUT
 class GeneratorService:
     generator_repo: GeneratorRepo
     engine_repo: EngineRepo
+    manager: ProcessManager
 
-    def __init__(self, generator_repo: GeneratorRepo, engine_repo: EngineRepo):
+    def __init__(
+        self,
+        generator_repo: GeneratorRepo,
+        engine_repo: EngineRepo,
+        manager: ProcessManager,
+    ):
         self.engine_repo = engine_repo
         self.generator_repo = generator_repo
+        self.manager = manager
 
     async def _validate(
         self, input: GeneratorSchemaAsUserInput
@@ -38,19 +46,24 @@ class GeneratorService:
 
         engine = await self.engine_repo.get_one(input.engine_id)
         gs = GeneratorSchema(
-            name=input.name, engine=engine, status=GeneratorStatus.STOPPED
+            name=input.name, engine=engine, status=GeneratorStatus.CLOSED
         )
         gs = await self.generator_repo.create(gs)
         return gs
 
-    async def start(self, id: int) -> GeneratorSchema:
+    async def start_generator(self, id: int) -> GeneratorSchema:
         if not await self.generator_repo.exists(id):
             raise TSTError(GENERATOR_NOT_FOUND_ERROR, "")
 
-        return await self.generator_repo.update_status(id, GeneratorStatus.STARTING)
+        gen = await self.generator_repo.update_status(id, GeneratorStatus.STARTING)
+        await self.manager.start_generator(gen)
+        return gen
 
-    async def stop(self, id: int) -> GeneratorSchema:
+    async def close_generator(self, id: int) -> GeneratorSchema:
         if not await self.generator_repo.exists(id):
             raise TSTError(GENERATOR_NOT_FOUND_ERROR, "")
 
-        return await self.generator_repo.update_status(id, GeneratorStatus.STOPPING)
+        gen = await self.generator_repo.update_status(id, GeneratorStatus.CLOSING)
+        assert gen.id is not None
+        await self.manager.stop_generator(gen.id)
+        return gen

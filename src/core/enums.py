@@ -76,10 +76,10 @@ class JobStatus(enum.StrEnum):
 
 class GeneratorStatus(enum.StrEnum):
     STARTING = "starting"
-    FREE = "free"
+    READY = "ready"
     WORKING = "working"
-    STOPPING = "stopping"
-    STOPPED = "stopped"
+    CLOSING = "closing"
+    CLOSED = "closed"
 
 
 class FileImageType(enum.StrEnum):
@@ -93,6 +93,8 @@ class GeneratorCommandType(enum.StrEnum):
 
 
 class GeneratorResultType(enum.StrEnum):
+    READY = "ready"
     JOB = "job"
     ERROR = "error"
+    CRASH = "crash"
     CLOSED = "closed"

@@ -35,27 +35,17 @@ async def create_generator(
 )
 @inject
 async def start_generator(id: int, svc: FromDishka[GeneratorService]):
-    return await svc.start(id)
+    return await svc.start_generator(id)
 
 
 @router.patch(
-    "/{id}/stop", response_model=GeneratorSchema, status_code=status.HTTP_202_ACCEPTED
+    "/{id}/close", response_model=GeneratorSchema, status_code=status.HTTP_202_ACCEPTED
 )
 @inject
-async def stop_generator(id: int, svc: FromDishka[GeneratorService]):
-    return await svc.stop(id)
-
-
-@router.patch("/{id}/stop/force")
-async def stop_force_generator():
-    pass
+async def close_generator(id: int, svc: FromDishka[GeneratorService]):
+    return await svc.close_generator(id)
 
 
 @router.delete("/{id}")
 async def delete_generator():
-    pass
-
-
-@router.delete("/{id}/force")
-async def delete_force_generator():
     pass

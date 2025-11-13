@@ -6,12 +6,14 @@ import typing
 from contextlib import asynccontextmanager
 
 import uvicorn
+from dishka.async_container import AsyncContainer
 from dishka.integrations.fastapi import setup_dishka
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from pytsterrors import TSTError
 
 from src.api.v1.di_container import container
+from src.api.v1.generators.manager import ProcessManager
 from src.api.v1.router import api_router
 from src.core.config import enable_hugging_face_envs, read_config
 from src.core.tags.user_errors import user_error_responses
@@ -27,6 +29,9 @@ async def lifespan(app: FastAPI):
     app.state.config = config
     enable_hugging_face_envs(config)
     await async_init_db(config.db_path)
+
+    container: AsyncContainer = app.state.dishka_container  # Set by setup_dishka
+    await container.get(ProcessManager)
     yield
     print("closing server")
     await async_close_db()
@@ -71,7 +76,7 @@ app.include_router(api_router, prefix="/api/v1")
 
 
 def main():
-    logging.basicConfig(level=logging.DEBUG)
+    # logging.basicConfig(level=logging.DEBUG)
     multiprocessing.set_start_method("spawn")
     parser = argparse.ArgumentParser(
         prog="Automatic Spoon",
