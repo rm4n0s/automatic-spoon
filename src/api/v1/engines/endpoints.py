@@ -2,8 +2,9 @@ from dishka.integrations.fastapi import FromDishka, inject
 from fastapi import APIRouter, status
 
 from .repositories import EngineRepo
-from .schemas import EngineSchema, EngineSchemaAsUserInput
+from .schemas import EngineSchema
 from .services import EngineService
+from .user_inputs import EngineUserInput
 
 router = APIRouter()
 
@@ -23,7 +24,7 @@ async def get_one_engine(id: int, repo: FromDishka[EngineRepo]):
 @router.post("/", response_model=EngineSchema, status_code=status.HTTP_201_CREATED)
 @inject
 async def create_engine(
-    payload: EngineSchemaAsUserInput,
+    payload: EngineUserInput,
     svc: FromDishka[EngineService],
 ):
     return await svc.create(payload)

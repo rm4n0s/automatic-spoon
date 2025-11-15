@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 import torch
 from compel import CompelForSD, CompelForSDXL
 from diffusers import (
@@ -31,7 +33,7 @@ from src.api.v1.engines.schemas import (
     EngineSchema,
     LoraAndWeight,
 )
-from src.api.v1.jobs.schemas import JobSchema
+from src.api.v1.generators.schemas import ImageSchema
 from src.core.enums import (
     AIModelBase,
     LongPromptTechnique,
@@ -303,77 +305,107 @@ def set_scheduler(pipe: DiffusionPipeline, scheduler_enum: Scheduler):
             pipe.scheduler = DEISMultistepScheduler.from_config(pipe.scheduler.config)
 
 
-def run_pipe(pipe, engine: EngineSchema, job: JobSchema):  # pyright: ignore[reportMissingParameterType,reportUnknownParameterType]
-    seed = job.seed or engine.seed
-    guidance_scale = job.guidance_scale or engine.guidance_scale
-    num_inference_steps = job.steps or engine.steps
-    control_guidance_start = job.control_guidance_start or engine.control_guidance_start
-    control_guidance_end = job.control_guidance_end or engine.control_guidance_end
-    height = job.height or engine.height
-    width = job.width or engine.width
+@dataclass
+class PromptEmbeds:
+    prompt_embeds: torch.Tensor | None
+    prompt_neg_embeds: torch.Tensor | None
+    pooled_prompt_embeds: torch.Tensor | None
+    negative_pooled_prompt_embeds: torch.Tensor | None
 
-    prompt = job.prompt
-    negative_prompt = job.negative_prompt
 
-    prompt_embeds = None
-    prompt_neg_embeds = None
-    pooled_prompt_embeds = None
-    negative_pooled_prompt_embeds = None
+def enable_long_prompt(
+    pipe, prompt: str, negative_prompt: str, engine: EngineSchema
+) -> PromptEmbeds | None:
+    if engine.long_prompt_technique is None:
+        return None
 
-    conditioning_images, controlnet_conditioning_scale = prepare_pose_images(job)
-
-    if engine.long_prompt_technique is not None:
-        match engine.long_prompt_technique:
-            case LongPromptTechnique.COMPEL:
-                if engine.checkpoint_model.model_base == AIModelBase.SDXL:
-                    compel = CompelForSDXL(
-                        pipe,
-                    )
-                    conditioning = compel(
-                        main_prompt=prompt, negative_prompt=negative_prompt
-                    )
-                    prompt_embeds = conditioning.embeds
-                    pooled_prompt_embeds = conditioning.pooled_embeds
-                    prompt_neg_embeds = conditioning.negative_embeds
-                    negative_pooled_prompt_embeds = conditioning.negative_pooled_embeds
-
-                if engine.checkpoint_model.model_base == AIModelBase.SD:
-                    compel = CompelForSD(
-                        pipe,
-                    )
-                    conditioning = compel(
-                        prompt=prompt, negative_prompt=negative_prompt
-                    )
-                    prompt_embeds = conditioning.embeds
-                    pooled_prompt_embeds = conditioning.pooled_embeds
-                    prompt_neg_embeds = conditioning.negative_embeds
-                    negative_pooled_prompt_embeds = conditioning.negative_pooled_embeds
-
-            case LongPromptTechnique.SDEMBED:
-                (
-                    prompt_embeds,
-                    prompt_neg_embeds,
-                    pooled_prompt_embeds,
-                    negative_pooled_prompt_embeds,
-                ) = get_weighted_text_embeddings_sdxl(
-                    pipe, prompt=prompt, neg_prompt=negative_prompt
+    emb = PromptEmbeds(
+        prompt_embeds=None,
+        prompt_neg_embeds=None,
+        pooled_prompt_embeds=None,
+        negative_pooled_prompt_embeds=None,
+    )
+    match engine.long_prompt_technique:
+        case LongPromptTechnique.COMPEL:
+            if engine.checkpoint_model.model_base == AIModelBase.SDXL:
+                compel = CompelForSDXL(
+                    pipe,
                 )
+                conditioning = compel(
+                    main_prompt=prompt, negative_prompt=negative_prompt
+                )
+                emb.prompt_embeds = conditioning.embeds
+                emb.pooled_prompt_embeds = conditioning.pooled_embeds
+                emb.prompt_neg_embeds = conditioning.negative_embeds
+                emb.negative_pooled_prompt_embeds = conditioning.negative_pooled_embeds
+
+            if engine.checkpoint_model.model_base == AIModelBase.SD:
+                compel = CompelForSD(
+                    pipe,
+                )
+                conditioning = compel(prompt=prompt, negative_prompt=negative_prompt)
+                emb.prompt_embeds = conditioning.embeds
+                emb.pooled_prompt_embeds = conditioning.pooled_embeds
+                emb.prompt_neg_embeds = conditioning.negative_embeds
+                emb.negative_pooled_prompt_embeds = conditioning.negative_pooled_embeds
+
+        case LongPromptTechnique.SDEMBED:
+            (
+                emb.prompt_embeds,
+                emb.prompt_neg_embeds,
+                emb.pooled_prompt_embeds,
+                emb.negative_pooled_prompt_embeds,
+            ) = get_weighted_text_embeddings_sdxl(
+                pipe, prompt=prompt, neg_prompt=negative_prompt
+            )
+
+    return emb
+
+
+def run_pipe(pipe, engine: EngineSchema, img_sch: ImageSchema):  # pyright: ignore[reportMissingParameterType,reportUnknownParameterType]
+    seed = img_sch.seed or engine.seed
+    guidance_scale = img_sch.guidance_scale or engine.guidance_scale
+    num_inference_steps = img_sch.steps or engine.steps
+    control_guidance_start = (
+        img_sch.control_guidance_start or engine.control_guidance_start
+    )
+    control_guidance_end = img_sch.control_guidance_end or engine.control_guidance_end
+    height = img_sch.height or engine.height
+    width = img_sch.width or engine.width
+
+    prompt = img_sch.prompt
+    negative_prompt = img_sch.negative_prompt
+
+    conditioning_images, controlnet_conditioning_scale = prepare_pose_images(
+        engine, img_sch
+    )
+
+    prompt_embeddings = enable_long_prompt(pipe, prompt, negative_prompt, engine)
+    kwargs = {}
+
+    if prompt_embeddings is not None:
+        kwargs["prompt_embeds"] = prompt_embeddings.prompt_embeds
+        kwargs["prompt_neg_embeds"] = prompt_embeddings.prompt_neg_embeds
+        kwargs["pooled_prompt_embeds"] = prompt_embeddings.pooled_prompt_embeds
+        kwargs["negative_pooled_prompt_embeds"] = (
+            prompt_embeddings.negative_pooled_prompt_embeds
+        )
+    else:
+        kwargs["prompt"] = prompt
+        kwargs["negative_prompt"] = negative_prompt
 
     generator = torch.Generator(device="cuda").manual_seed(seed)
-    image = pipe(
-        prompt_embeds=prompt_embeds,
-        negative_prompt_embeds=prompt_neg_embeds,
-        pooled_prompt_embeds=pooled_prompt_embeds,
-        negative_pooled_prompt_embeds=negative_pooled_prompt_embeds,
-        guidance_scale=guidance_scale,
-        num_inference_steps=num_inference_steps,
-        image=conditioning_images,
-        controlnet_conditioning_scale=controlnet_conditioning_scale,
-        control_guidance_start=control_guidance_start,
-        control_guidance_end=control_guidance_end,
-        height=height,
-        width=width,
-        generator=generator,
-    ).images[0]
+    kwargs["generator"] = generator
+    kwargs["height"] = height
+    kwargs["width"] = width
+    kwargs["guidance_scale"] = guidance_scale
+    kwargs["num_inference_steps"] = num_inference_steps
 
-    return image
+    if conditioning_images is not None:
+        kwargs["image"] = conditioning_images
+        kwargs["controlnet_conditioning_scale"] = controlnet_conditioning_scale
+        kwargs["control_guidance_start"] = control_guidance_start
+        kwargs["control_guidance_end"] = control_guidance_end
+
+    image = pipe(**kwargs).images[0]
+    image.save(img_sch.file_path)

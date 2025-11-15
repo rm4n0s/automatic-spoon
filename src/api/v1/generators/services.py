@@ -1,11 +1,13 @@
 from pytsterrors import TSTError
 
 from src.api.v1.engines.repositories import EngineRepo
-from src.api.v1.generators.manager import ProcessManager
-from src.api.v1.generators.repositories import GeneratorRepo
-from src.api.v1.generators.schemas import GeneratorSchema, GeneratorSchemaAsUserInput
 from src.core.enums import GeneratorStatus
 from src.core.tags.user_errors import GENERATOR_NOT_FOUND_ERROR, WRONG_INPUT
+
+from .manager import ProcessManager
+from .repositories import GeneratorRepo
+from .schemas import GeneratorSchema
+from .user_inputs import GeneratorUserInput
 
 
 class GeneratorService:
@@ -23,9 +25,7 @@ class GeneratorService:
         self.generator_repo = generator_repo
         self.manager = manager
 
-    async def _validate(
-        self, input: GeneratorSchemaAsUserInput
-    ) -> list[dict[str, str]]:
+    async def _validate(self, input: GeneratorUserInput) -> list[dict[str, str]]:
         res = []
         ok = await self.engine_repo.exists(id=input.engine_id)
 
@@ -39,14 +39,17 @@ class GeneratorService:
 
         return res
 
-    async def create(self, input: GeneratorSchemaAsUserInput) -> GeneratorSchema:
+    async def create(self, input: GeneratorUserInput) -> GeneratorSchema:
         errs = await self._validate(input)
         if len(errs) > 0:
             raise TSTError(WRONG_INPUT, "", metadata={"error_per_field": errs})
 
         engine = await self.engine_repo.get_one(input.engine_id)
         gs = GeneratorSchema(
-            name=input.name, engine=engine, status=GeneratorStatus.CLOSED
+            name=input.name,
+            engine=engine,
+            status=GeneratorStatus.CLOSED,
+            gpu_id=input.gpu_id,
         )
         gs = await self.generator_repo.create(gs)
         return gs

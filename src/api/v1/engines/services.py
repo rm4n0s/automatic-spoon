@@ -5,7 +5,8 @@ from src.core.enums import AIModelType
 from src.core.tags.user_errors import WRONG_INPUT
 
 from .repositories import EngineRepo
-from .schemas import EngineSchema, EngineSchemaAsUserInput, LoraAndWeight
+from .schemas import EngineSchema, LoraAndWeight
+from .user_inputs import EngineUserInput
 
 
 class EngineService:
@@ -16,7 +17,7 @@ class EngineService:
         self.engine_repo = engine_repo
         self.aimodel_repo = aimodel_repo
 
-    async def _validate(self, input: EngineSchemaAsUserInput) -> list[dict[str, str]]:
+    async def _validate(self, input: EngineUserInput) -> list[dict[str, str]]:
         res = []
         ok = await self.aimodel_repo.exists(
             id=input.checkpoint_model_id, model_type=AIModelType.CHECKPOINT
@@ -31,7 +32,7 @@ class EngineService:
 
         return res
 
-    async def create(self, input: EngineSchemaAsUserInput) -> EngineSchema | None:
+    async def create(self, input: EngineUserInput) -> EngineSchema | None:
         errs = await self._validate(input)
         if len(errs) > 0:
             raise TSTError(WRONG_INPUT, "", metadata={"error_per_field": errs})

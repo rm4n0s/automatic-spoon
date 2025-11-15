@@ -10,11 +10,11 @@ from src.api.v1.engines.schemas import (
     EngineSchema,
 )
 from src.api.v1.generators.process.generator import start_generator
-from src.api.v1.generators.schemas import (
+from src.api.v1.generators.process.types import (
     GeneratorCommand,
     GeneratorResult,
 )
-from src.api.v1.jobs.schemas import JobSchema
+from src.api.v1.generators.schemas import GeneratorSchema, ImageSchema, JobSchema
 from src.core.config import enable_hugging_face_envs, read_config
 from src.core.enums import (
     AIModelBase,
@@ -22,6 +22,7 @@ from src.core.enums import (
     AIModelType,
     GeneratorCommandType,
     GeneratorResultType,
+    GeneratorStatus,
     LongPromptTechnique,
     PathType,
     Scheduler,
@@ -80,55 +81,89 @@ def test_sd_compel():
         steps=30,
     )
 
+    gen = GeneratorSchema(
+        id=1, name="simple", gpu_id=0, engine=engine, status=GeneratorStatus.READY
+    )
+
     commandq: Queue[GeneratorCommand] = multiprocessing.Queue()
     resultq: Queue[GeneratorResult] = multiprocessing.Queue()
 
     p = multiprocessing.Process(
         target=start_generator,
         args=(
-            engine,
+            gen.name,
+            gen.id,
+            gen.gpu_id,
+            gen.engine,
             commandq,
             resultq,
         ),
     )
     p.start()
 
-    time.sleep(60)
-    id = uuid.uuid4()
-    logging.debug("send job")
-    job = JobSchema(
+    time.sleep(6)
+
+    res = resultq.get()
+    assert res.result == GeneratorResultType.READY
+
+    img_id = str(uuid.uuid4())
+    image_king = ImageSchema(
         id=1,
-        prompt="a king, (white background:1.5)",
+        job_id=1,
+        generator_id=1,
+        prompt="a king, blue hair, (white background:1.5)",
         negative_prompt="bad quality",
-        save_file_path=f"/tmp/{id}.png",
+        ready=False,
+        file_path=f"/tmp/king-{img_id}.png",
     )
+    logging.debug("send job")
+    job = JobSchema(id=1, generator_id=1, images=[image_king])
 
     start = time.time()
     commandq.put(GeneratorCommand(command=GeneratorCommandType.JOB, value=job))
     res = resultq.get()
-    assert res.result == GeneratorResultType.JOB
+    assert res.result == GeneratorResultType.IMAGE_FINISHED
+    res = resultq.get()
+    assert res.result == GeneratorResultType.JOB_FINISHED
     end = time.time()
     print(f"first job took {end - start}")
-    assert os.path.isfile(job.save_file_path)
-    print(f"finished at {job.save_file_path}")
+    assert os.path.isfile(job.images[0].file_path)
 
-    id = uuid.uuid4()
     logging.debug("send job")
-    job = JobSchema(
-        id=1,
-        prompt="a queen, (white background:1.5)",
+    image_queen = ImageSchema(
+        id=2,
+        job_id=2,
+        generator_id=1,
+        prompt="a queen, red hair, (white background:1.5)",
         negative_prompt="bad quality",
-        save_file_path=f"/tmp/{id}.png",
+        ready=False,
+        file_path=f"/tmp/queen-{img_id}.png",
     )
+
+    image_prince = ImageSchema(
+        id=3,
+        job_id=2,
+        generator_id=1,
+        prompt="a prince, blonde hair, (white background:1.5)",
+        negative_prompt="bad quality",
+        ready=False,
+        file_path=f"/tmp/prince-{img_id}.png",
+    )
+
+    job = JobSchema(id=2, generator_id=1, images=[image_queen, image_prince])
 
     start = time.time()
     commandq.put(GeneratorCommand(command=GeneratorCommandType.JOB, value=job))
     res = resultq.get()
-    assert res.result == GeneratorResultType.JOB
+    assert res.result == GeneratorResultType.IMAGE_FINISHED
+    res = resultq.get()
+    assert res.result == GeneratorResultType.IMAGE_FINISHED
+    res = resultq.get()
+    assert res.result == GeneratorResultType.JOB_FINISHED
     end = time.time()
     print(f"second job took {end - start}")
-    assert os.path.isfile(job.save_file_path)
-    print(f"finished at {job.save_file_path}")
+    for img in job.images:
+        assert os.path.isfile(img.file_path)
 
     commandq.put(GeneratorCommand(command=GeneratorCommandType.CLOSE, value=None))
     res = resultq.get()

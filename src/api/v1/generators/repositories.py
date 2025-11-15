@@ -11,7 +11,10 @@ from .schemas import GeneratorSchema
 class GeneratorRepo:
     async def create(self, input: GeneratorSchema) -> GeneratorSchema:
         g = await Generator.create(
-            engine_id=input.engine.id, status=input.status, name=input.name
+            engine_id=input.engine.id,
+            status=input.status,
+            name=input.name,
+            gpu_id=input.gpu_id,
         )
         input.id = g.id
         return input

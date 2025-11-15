@@ -2,9 +2,9 @@ import logging
 from multiprocessing.queues import Queue
 
 from diffusers import DiffusionPipeline
+from pytsterrors import TSTError
 
 from src.api.v1.engines.schemas import EngineSchema
-from src.api.v1.generators.schemas import GeneratorCommand, GeneratorResult
 from src.core.enums import (
     GeneratorCommandType,
     GeneratorResultType,
@@ -19,28 +19,32 @@ from .pipe import (
     run_pipe,
     set_scheduler,
 )
+from .types import GeneratorCommand, GeneratorResult, ImageFinished, JobFinished
 
 
 class GeneratorProcess:
     _name: str
-    _id: int
+    _generator_id: int
     _command_queue: Queue[GeneratorCommand]
     _result_queue: Queue[GeneratorResult]
     _engine: EngineSchema
+    _gpu_id: int
 
     def __init__(
         self,
         generator_name: str,
-        id: int,
+        generator_id: int,
+        gpu_id: int,
         engine: EngineSchema,
         commands_queue: Queue[GeneratorCommand],
         result_queue: Queue[GeneratorResult],
     ):
         self._name = generator_name
-        self._id = id
+        self._generator_id = generator_id
         self._command_queue = commands_queue
         self._result_queue = result_queue
         self._engine = engine
+        self._gpu_id = gpu_id
 
     def _create_pipe(self) -> DiffusionPipeline:
         vae = None
@@ -59,7 +63,7 @@ class GeneratorProcess:
             load_embeddings(pipe, self._engine.embedding_models)
 
         set_scheduler(pipe, self._engine.scheduler)
-        pipe = pipe.to("cuda")
+        pipe = pipe.to("cuda:" + str(self._gpu_id))
         pipe.safety_checker = None
         return pipe
 
@@ -68,7 +72,7 @@ class GeneratorProcess:
         self._result_queue.put(
             GeneratorResult(
                 generator_name=self._name,
-                generator_id=self._id,
+                generator_id=self._generator_id,
                 result=GeneratorResultType.READY,
                 value=None,
             )
@@ -82,22 +86,36 @@ class GeneratorProcess:
                         self._result_queue.put(
                             GeneratorResult(
                                 generator_name=self._name,
-                                generator_id=self._id,
+                                generator_id=self._generator_id,
                                 result=GeneratorResultType.ERROR,
-                                value="job was None",
+                                value=TSTError(
+                                    "command-value-was-none",
+                                    "Command value was None on JOB command type",
+                                ),
                             )
                         )
                         continue
 
                     job = cmd.value
-                    image = run_pipe(pipe, self._engine, job)
-                    image.save(job.save_file_path)
+                    assert job.id
+                    for img in job.images:
+                        assert img.id
+                        run_pipe(pipe, self._engine, img)
+                        self._result_queue.put(
+                            GeneratorResult(
+                                generator_name=self._name,
+                                generator_id=self._generator_id,
+                                result=GeneratorResultType.IMAGE_FINISHED,
+                                value=ImageFinished(job_id=job.id, image_id=img.id),
+                            )
+                        )
+
                     self._result_queue.put(
                         GeneratorResult(
                             generator_name=self._name,
-                            generator_id=self._id,
-                            result=GeneratorResultType.JOB,
-                            value=job,
+                            generator_id=self._generator_id,
+                            result=GeneratorResultType.JOB_FINISHED,
+                            value=JobFinished(job_id=job.id),
                         )
                     )
                 case GeneratorCommandType.CLOSE:
@@ -107,7 +125,7 @@ class GeneratorProcess:
         self._result_queue.put(
             GeneratorResult(
                 generator_name=self._name,
-                generator_id=self._id,
+                generator_id=self._generator_id,
                 result=GeneratorResultType.CLOSED,
                 value=None,
             )
@@ -117,12 +135,13 @@ class GeneratorProcess:
 def start_generator(
     generator_name: str,
     generator_id: int,
+    gpu_id: int,
     engine: EngineSchema,
     commands_queue: Queue[GeneratorCommand],
     result_queue: Queue[GeneratorResult],
 ):
     generator = GeneratorProcess(
-        generator_name, generator_id, engine, commands_queue, result_queue
+        generator_name, generator_id, gpu_id, engine, commands_queue, result_queue
     )
     logging.debug(f"start generator with engine named {engine.name} and id {engine.id}")
     generator.listening()

@@ -1,10 +1,11 @@
 from dishka.integrations.fastapi import FromDishka, inject
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, status
 from starlette.status import HTTP_202_ACCEPTED
 
-from src.api.v1.generators.repositories import GeneratorRepo
-from src.api.v1.generators.schemas import GeneratorSchema, GeneratorSchemaAsUserInput
-from src.api.v1.generators.services import GeneratorService
+from .repositories import GeneratorRepo
+from .schemas import GeneratorSchema
+from .services import GeneratorService
+from .user_inputs import GeneratorUserInput
 
 router = APIRouter()
 
@@ -24,7 +25,7 @@ async def get_generator(id: int, repo: FromDishka[GeneratorRepo]):
 @router.post("/", response_model=GeneratorSchema, status_code=status.HTTP_201_CREATED)
 @inject
 async def create_generator(
-    payload: GeneratorSchemaAsUserInput,
+    payload: GeneratorUserInput,
     svc: FromDishka[GeneratorService],
 ):
     return await svc.create(payload)

@@ -6,40 +6,65 @@ from diffusers.utils import load_image
 from PIL import Image
 from pytsterrors import TSTError
 
-from src.api.v1.jobs.schemas import JobSchema
-from src.core.enums import ControlNetType
+from src.api.v1.engines.schemas import EngineSchema
+from src.api.v1.generators.schemas import ImageSchema
+from src.core.enums import AIModelType, ControlNetType
 
 
-def prepare_pose_images(job: JobSchema):
-    controlnet_conditioning_scale = None
-    conditioning_images = None
-    if job.reference_image_path is not None:
-        reference_pose_image = load_image(job.reference_image_path)
-        controlnet_conditioning_scale = []
-        conditioning_images = []
-        for pose in job.pose_images:
-            if pose.aimodel.control_net_type is None:
-                raise TSTError(
-                    "no-contron-net-type-in-model",
-                    f"control net type of aimodel with ID {pose.aimodel.id} is empty",
-                )
+def poses_from_reference_image(
+    engine: EngineSchema, reference_image_path: str, scale: float
+):
+    reference_pose_image = load_image(reference_image_path)
+    controlnet_conditioning_scale = []
+    conditioning_images = []
+    for pose_model in engine.control_net_models:
+        if pose_model.control_net_type is None:
+            raise TSTError(
+                "no-contron-net-type-in-model",
+                f"control net type of aimodel with ID {pose_model.id} is empty",
+            )
 
-            if pose.aimodel.control_net_type == ControlNetType.OPENPOSE:
-                openpose = OpenposeDetector.from_pretrained("lllyasviel/Annotators")
-                pose_image = openpose(reference_pose_image, include_hand=True)
-                conditioning_images.append(pose_image)
-                controlnet_conditioning_scale.append(pose.scale)
-            if pose.aimodel.control_net_type == ControlNetType.MIDAS:
-                midas = MidasDetector.from_pretrained("lllyasviel/Annotators")
-                depth_image = midas(reference_pose_image)
-                conditioning_images.append(depth_image)
-                controlnet_conditioning_scale.append(pose.scale)
-            if pose.aimodel.control_net_type == ControlNetType.MEDIAPIPE:
-                pose_image = get_mediapipe_pose(job.reference_image_path)
-                conditioning_images.append(pose_image)
-                controlnet_conditioning_scale.append(pose.scale)
+        if pose_model.control_net_type == ControlNetType.OPENPOSE:
+            openpose = OpenposeDetector.from_pretrained("lllyasviel/Annotators")
+            pose_image = openpose(
+                reference_pose_image, include_hand=True, include_face=True
+            )
+            conditioning_images.append(pose_image)
+            controlnet_conditioning_scale.append(scale)
+        if pose_model.control_net_type == ControlNetType.MIDAS:
+            midas = MidasDetector.from_pretrained("lllyasviel/Annotators")
+            depth_image = midas(reference_pose_image)
+            conditioning_images.append(depth_image)
+            controlnet_conditioning_scale.append(scale)
+        if pose_model.control_net_type == ControlNetType.MEDIAPIPE:
+            pose_image = get_mediapipe_pose(reference_image_path)
+            conditioning_images.append(pose_image)
+            controlnet_conditioning_scale.append(scale)
 
-    return (conditioning_images, controlnet_conditioning_scale)
+    return conditioning_images, controlnet_conditioning_scale
+
+
+def prepare_pose_images(engine: EngineSchema, img_sch: ImageSchema):
+    if len(img_sch.control_images) == 0:
+        return (None, None)
+
+    controlnet_conditioning_scales = []
+    conditioning_images = []
+    for ci in img_sch.control_images:
+        if ci.aimodel is None:
+            cond_images, cond_scales = poses_from_reference_image(
+                engine, ci.image_file_path, ci.controlnet_conditioning_scale
+            )
+            conditioning_images = conditioning_images + cond_images
+            controlnet_conditioning_scales = (
+                controlnet_conditioning_scales + cond_scales
+            )
+        else:
+            img = load_image(ci.image_file_path)
+            conditioning_images.append(img)
+            controlnet_conditioning_scales.append(ci.controlnet_conditioning_scale)
+
+    return (conditioning_images, controlnet_conditioning_scales)
 
 
 def get_mediapipe_pose(reference_image_path: str):

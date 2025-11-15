@@ -1,3 +1,3 @@
 db_path: ./db.sqlite3
-images_path: ./.generated_images
-hugging_face_path: ./.huggingface
+images_path: ./.private/generated_images
+hugging_face_path: ./.private/huggingface

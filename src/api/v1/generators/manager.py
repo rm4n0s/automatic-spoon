@@ -9,8 +9,9 @@ from pytsterrors import TSTError
 from src.core.enums import GeneratorCommandType, GeneratorResultType, GeneratorStatus
 
 from .process.generator import start_generator
+from .process.types import GeneratorCommand, GeneratorResult
 from .repositories import GeneratorRepo
-from .schemas import GeneratorCommand, GeneratorResult, GeneratorSchema
+from .schemas import GeneratorSchema
 
 
 @dataclass
@@ -85,6 +86,7 @@ class ProcessManager:
                 args=(
                     gen.name,
                     gen.id,
+                    gen.gpu_id,
                     gen.engine,
                     commandq,
                     self._resultq,

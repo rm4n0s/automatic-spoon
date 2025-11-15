@@ -2,8 +2,9 @@ from dishka.integrations.fastapi import FromDishka, inject
 from fastapi import APIRouter, status
 
 from .repositories import AIModelRepo
-from .schemas import AIModelSchema, AIModelSchemaAsUserInput
+from .schemas import AIModelSchema
 from .services import AIModelService
+from .user_inputs import AIModelUserInput
 
 router = APIRouter()
 
@@ -23,7 +24,7 @@ async def get_one_aimodel(id: int, repo: FromDishka[AIModelRepo]):
 @router.post("/", response_model=AIModelSchema, status_code=status.HTTP_201_CREATED)
 @inject
 async def create_aimodel(
-    payload: AIModelSchemaAsUserInput,
+    payload: AIModelUserInput,
     svc: FromDishka[AIModelService],
 ):
     return await svc.create(payload)
