@@ -7,8 +7,8 @@ from PIL import Image
 from pytsterrors import TSTError
 
 from src.api.v1.engines.schemas import EngineSchema
-from src.api.v1.generators.schemas import ImageSchema
-from src.core.enums import AIModelType, ControlNetType
+from src.api.v1.jobs.schemas import ImageSchema
+from src.core.enums import ControlNetType
 
 
 def poses_from_reference_image(

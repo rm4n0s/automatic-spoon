@@ -1,9 +1,8 @@
 from dataclasses import dataclass
 
-from pydantic import BaseModel
 from pytsterrors import TSTError
 
-from src.api.v1.generators.schemas import JobSchema
+from src.api.v1.jobs.schemas import JobSchema
 from src.core.enums import GeneratorCommandType, GeneratorResultType
 
 

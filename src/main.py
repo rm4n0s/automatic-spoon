@@ -26,12 +26,14 @@ async def lifespan(app: FastAPI):
     if not config_path:
         raise RuntimeError("APP_CONFIG_PATH environment variable is required")
     config = read_config(config_path)
+    os.makedirs(config.images_path, exist_ok=True)
     app.state.config = config
     enable_hugging_face_envs(config)
     await async_init_db(config.db_path)
 
     container: AsyncContainer = app.state.dishka_container  # Set by setup_dishka
-    await container.get(ProcessManager)
+
+    _ = await container.get(ProcessManager)
     yield
     print("closing server")
     await async_close_db()

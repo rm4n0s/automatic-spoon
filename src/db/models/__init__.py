@@ -1,14 +1,15 @@
 from .aimodel import AIModel
 from .engine import AIModelForEngine, Engine
 from .generator import Generator
-from .job import AIModelForImage, Image, Job
+from .image import ControlNetImage, Image
+from .job import Job
 
 __all__ = [
     "AIModel",
     "AIModelForEngine",
     "Engine",
     "Image",
-    "AIModelForImage",
+    "ControlNetImage",
     "Job",
     "Generator",
 ]
