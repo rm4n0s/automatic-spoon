@@ -1,6 +1,9 @@
 from dishka.integrations.fastapi import FromDishka, inject
 from fastapi import APIRouter, status
 
+from src.api.v1.jobs.services import JobService
+from src.core.config import Config
+
 from .repositories import JobRepo
 from .schemas import JobSchema
 from .user_inputs import JobUserInput
@@ -16,5 +19,7 @@ async def get_jobs(repo: FromDishka[JobRepo]):
 
 @router.post("/", response_model=JobSchema, status_code=status.HTTP_201_CREATED)
 @inject
-async def add_job(payload: JobUserInput, repo: FromDishka[JobRepo]):
-    return await repo.get_all()
+async def add_job(
+    payload: JobUserInput, svc: FromDishka[JobService], config: FromDishka[Config]
+):
+    return await svc.create_job(config, payload)

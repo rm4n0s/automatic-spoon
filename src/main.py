@@ -12,27 +12,21 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from pytsterrors import TSTError
 
-from src.api.v1.di_container import container
+from src.api.v1.di_container import create_dishka_container
 from src.api.v1.generators.manager import ProcessManager
 from src.api.v1.router import api_router
-from src.core.config import enable_hugging_face_envs, read_config
+from src.core.config import Config, enable_hugging_face_envs, read_config
 from src.core.tags.user_errors import user_error_responses
 from src.db.database import async_close_db, async_init_db
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    config_path = os.getenv("APP_CONFIG_PATH")
-    if not config_path:
-        raise RuntimeError("APP_CONFIG_PATH environment variable is required")
-    config = read_config(config_path)
+    container: AsyncContainer = app.state.dishka_container  # Set by setup_dishka
+    config = await container.get(Config)
     os.makedirs(config.images_path, exist_ok=True)
-    app.state.config = config
     enable_hugging_face_envs(config)
     await async_init_db(config.db_path)
-
-    container: AsyncContainer = app.state.dishka_container  # Set by setup_dishka
-
     _ = await container.get(ProcessManager)
     yield
     print("closing server")
@@ -71,15 +65,8 @@ def add_exception_handlers(app: FastAPI):
         )
 
 
-app = FastAPI(lifespan=lifespan, title="Automatic Spoon")
-setup_dishka(container, app)
-add_exception_handlers(app)
-app.include_router(api_router, prefix="/api/v1")
-
-
 def main():
     # logging.basicConfig(level=logging.DEBUG)
-    multiprocessing.set_start_method("spawn")
     parser = argparse.ArgumentParser(
         prog="Automatic Spoon",
         description="It is a server for generating images",
@@ -100,12 +87,17 @@ def main():
         help="reload server after changes in specific folder",
     )
     args = parser.parse_args()
+    config_path = args.config
 
-    print(args.config)
-    os.environ["APP_CONFIG_PATH"] = args.config
+    config = read_config(config_path)
+    container = create_dishka_container(config)
+    app = FastAPI(lifespan=lifespan, title="Automatic Spoon")
+    setup_dishka(container, app)
+    add_exception_handlers(app)
+    app.include_router(api_router, prefix="/api/v1")
 
     uvicorn.run(
-        "src.main:app",
+        app,
         host=args.host,
         port=args.port,
         reload=args.reload,

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 
 import torch
 from compel import CompelForSD, CompelForSDXL
@@ -96,60 +97,50 @@ def create_vae(vae: AIModelSchema) -> AutoencoderKL:
 def create_pipe(
     checkpoint: AIModelSchema, vae: AutoencoderKL | None, cnets: list[ControlNetModel]
 ) -> DiffusionPipeline:
+    print(vae)
     variant = str(checkpoint.variant)
     torch_dtype = torch.float16
     if checkpoint.variant == Variant.FP32:
         torch_dtype = torch.float32
 
+    kwargs: dict[str, Any] = {  # pyright: ignore[reportExplicitAny]
+        "torch_dtype": torch_dtype,
+        "use_safetensors": True,
+        "variant": variant,
+    }
     # WITHOUT CONTROLL NET
     if (
         checkpoint.model_base == AIModelBase.SD
         and checkpoint.path_type == PathType.FILE
         and len(cnets) == 0
     ):
-        pipe = StableDiffusionPipeline.from_single_file(
-            checkpoint.path,
-            vae=vae,
-            torch_dtype=torch_dtype,
-            use_safetensors=True,
-            variant=variant,
-        )
+        if vae:
+            kwargs["vae"] = vae
+        pipe = StableDiffusionPipeline.from_single_file(checkpoint.path, **kwargs)
     elif (
         checkpoint.model_base == AIModelBase.SDXL
         and checkpoint.path_type == PathType.FILE
         and len(cnets) == 0
     ):
-        pipe = StableDiffusionXLPipeline.from_single_file(
-            checkpoint.path,
-            vae=vae,
-            torch_dtype=torch_dtype,
-            use_safetensors=True,
-            variant=variant,
-        )
+        if vae:
+            kwargs["vae"] = vae
+        pipe = StableDiffusionXLPipeline.from_single_file(checkpoint.path, **kwargs)
     elif (
         checkpoint.model_base == AIModelBase.SD
         and checkpoint.path_type == PathType.HUGGING_FACE
         and len(cnets) == 0
     ):
-        pipe = StableDiffusionPipeline.from_pretrained(
-            checkpoint.path,
-            vae=vae,
-            torch_dtype=torch_dtype,
-            use_safetensors=True,
-            variant=variant,
-        )
+        if vae:
+            kwargs["vae"] = vae
+        pipe = StableDiffusionPipeline.from_pretrained(checkpoint.path, **kwargs)
     elif (
         checkpoint.model_base == AIModelBase.SDXL
         and checkpoint.path_type == PathType.HUGGING_FACE
         and len(cnets) == 0
     ):
-        pipe = StableDiffusionXLPipeline.from_pretrained(
-            checkpoint.path,
-            vae=vae,
-            torch_dtype=torch_dtype,
-            use_safetensors=True,
-            variant=variant,
-        )
+        if vae:
+            kwargs["vae"] = vae
+        pipe = StableDiffusionXLPipeline.from_pretrained(checkpoint.path, **kwargs)
 
     # WITH CONTROLL NET
     elif (
@@ -157,52 +148,44 @@ def create_pipe(
         and checkpoint.path_type == PathType.FILE
         and len(cnets) > 0
     ):
+        kwargs["controlnet"] = cnets
+        if vae:
+            kwargs["vae"] = vae
         pipe = StableDiffusionControlNetPipeline.from_single_file(
-            checkpoint.path,
-            vae=vae,
-            controlnet=cnets,
-            torch_dtype=torch_dtype,
-            use_safetensors=True,
-            variant=variant,
+            checkpoint.path, **kwargs
         )
     elif (
         checkpoint.model_base == AIModelBase.SDXL
         and checkpoint.path_type == PathType.FILE
         and len(cnets) > 0
     ):
+        kwargs["controlnet"] = cnets
+        if vae:
+            kwargs["vae"] = vae
         pipe = StableDiffusionXLControlNetPipeline.from_single_file(
-            checkpoint.path,
-            vae=vae,
-            controlnet=cnets,
-            torch_dtype=torch_dtype,
-            use_safetensors=True,
-            variant=variant,
+            checkpoint.path, **kwargs
         )
     elif (
         checkpoint.model_base == AIModelBase.SD
         and checkpoint.path_type == PathType.HUGGING_FACE
         and len(cnets) > 0
     ):
+        kwargs["controlnet"] = cnets
+        if vae:
+            kwargs["vae"] = vae
         pipe = StableDiffusionControlNetPipeline.from_pretrained(
-            checkpoint.path,
-            vae=vae,
-            controlnet=cnets,
-            torch_dtype=torch_dtype,
-            use_safetensors=True,
-            variant=variant,
+            checkpoint.path, **kwargs
         )
     elif (
         checkpoint.model_base == AIModelBase.SDXL
         and checkpoint.path_type == PathType.HUGGING_FACE
         and len(cnets) > 0
     ):
+        kwargs["controlnet"] = cnets
+        if vae:
+            kwargs["vae"] = vae
         pipe = StableDiffusionXLControlNetPipeline.from_pretrained(
-            checkpoint.path,
-            vae=vae,
-            controlnet=cnets,
-            torch_dtype=torch_dtype,
-            use_safetensors=True,
-            variant=variant,
+            checkpoint.path, **kwargs
         )
     else:
         raise TSTError(
@@ -408,4 +391,5 @@ def run_pipe(pipe, engine: EngineSchema, img_sch: ImageSchema):  # pyright: igno
         kwargs["control_guidance_end"] = control_guidance_end
 
     image = pipe(**kwargs).images[0]
+    print(f"saved image to {img_sch.file_path}")
     image.save(img_sch.file_path)

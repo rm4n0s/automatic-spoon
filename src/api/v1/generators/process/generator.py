@@ -79,6 +79,7 @@ class GeneratorProcess:
         )
         while True:
             cmd = self._command_queue.get()
+            print(f"Generator {self._generator_id} received new command {cmd.command}")
             match cmd.command:
                 case GeneratorCommandType.JOB:
                     logging.debug("received job")

@@ -77,7 +77,7 @@ class JobStatus(enum.StrEnum):
 class GeneratorStatus(enum.StrEnum):
     STARTING = "starting"
     READY = "ready"
-    WORKING = "working"
+    BUSY = "busy"
     CLOSING = "closing"
     CLOSED = "closed"
 
@@ -94,8 +94,14 @@ class GeneratorCommandType(enum.StrEnum):
 
 class GeneratorResultType(enum.StrEnum):
     READY = "ready"
+    JOB_STARTING = "job_starting"
     JOB_FINISHED = "job_finished"
     IMAGE_FINISHED = "image_finished"
     ERROR = "error"
     CRASH = "crash"
     CLOSED = "closed"
+
+
+class ManagerSignalType(enum.StrEnum):
+    NEW_JOB = "new_job"
+    CHECK_WAITING_JOBS = "check_waiting_jobs"

@@ -14,7 +14,8 @@ from src.api.v1.generators.process.types import (
     GeneratorCommand,
     GeneratorResult,
 )
-from src.api.v1.generators.schemas import GeneratorSchema, ImageSchema, JobSchema
+from src.api.v1.generators.schemas import GeneratorSchema
+from src.api.v1.jobs.schemas import ImageSchema, JobSchema
 from src.core.config import enable_hugging_face_envs, read_config
 from src.core.enums import (
     AIModelBase,

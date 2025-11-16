@@ -3,6 +3,7 @@ from typing import Iterable
 from dishka import Provider, Scope, provide
 
 from src.api.v1.engines.repositories import EngineRepo
+from src.api.v1.jobs.repositories import JobRepo
 
 from .manager import ProcessManager
 from .repositories import GeneratorRepo
@@ -31,8 +32,8 @@ class ProcessManagerProvider(Provider):
 
     @provide
     def process_manager(
-        self, generator_repo: GeneratorRepo
+        self, generator_repo: GeneratorRepo, job_repo: JobRepo
     ) -> Iterable[ProcessManager]:
-        manager = ProcessManager(generator_repo)
+        manager = ProcessManager(generator_repo, job_repo)
         yield manager
         # No cleanup: thread has no stop, runs until process exit

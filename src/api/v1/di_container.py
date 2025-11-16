@@ -8,15 +8,25 @@ from src.api.v1.generators.di import (
     GeneratorServiceProvider,
     ProcessManagerProvider,
 )
+from src.api.v1.jobs.di import JobRepoProvider, JobServiceProvider
+from src.core.config import Config
+from src.core.config.di import ConfigProvider
 
-providers: list[Provider] = [
-    AIModelRepoProvider(),
-    AIModelServiceProvider(),
-    EngineRepoProvider(),
-    EngineServiceProvider(),
-    GeneratorRepoProvider(),
-    GeneratorServiceProvider(),
-    ProcessManagerProvider(),
-    FastapiProvider(),
-]
-container = make_async_container(*providers)
+
+def create_dishka_container(config: Config):
+    providers: list[Provider] = [
+        ConfigProvider(config),
+        AIModelRepoProvider(),
+        AIModelServiceProvider(),
+        EngineRepoProvider(),
+        EngineServiceProvider(),
+        GeneratorRepoProvider(),
+        GeneratorServiceProvider(),
+        ProcessManagerProvider(),
+        FastapiProvider(),
+        JobRepoProvider(),
+        JobServiceProvider(),
+    ]
+    container = make_async_container(*providers)
+
+    return container

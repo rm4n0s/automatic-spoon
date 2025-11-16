@@ -2,10 +2,7 @@ import base64
 import os
 import uuid
 
-from pydantic_core.core_schema import GeneralPlainInfoSerializerFunction
-
 from src.api.v1.aimodels.schemas import AIModelSchema
-from src.core.config import Config
 from src.db.models import AIModel, ControlNetImage, Image, Job
 
 from .schemas import ControlNetImageSchema, ImageSchema, JobSchema
@@ -14,23 +11,53 @@ from .user_inputs import JobUserInput
 
 class JobRepo:
     async def get_all(self) -> list[JobSchema]:
-        return []
+        jobs = await Job.all()
+        job_sch_list = []
+        for job in jobs:
+            imgs = await Image.filter(job_id=job.id)
+            img_sch_list = []
+            for img in imgs:
+                cnis = await ControlNetImage.filter(job_id=job.id, image_id=img.id)
+                img_sch = await serialize_image(img, cnis)
+                img_sch_list.append(img_sch)
 
-    async def create(self, config: Config, input: JobUserInput) -> JobSchema:
+            job_sch = JobSchema(
+                id=job.id, generator_id=job.generator_id, images=img_sch_list
+            )
+            job_sch_list.append(job_sch)
+        return job_sch_list
+
+    async def get_or_none(self, id: int) -> JobSchema | None:
+        job = await Job.get_or_none(id=id)
+        if job is None:
+            return None
+
+        imgs = await Image.filter(job_id=job.id)
+        img_sch_list = []
+        for img in imgs:
+            cnis = await ControlNetImage.filter(image_id=img.id)
+            img_sch = await serialize_image(img, cnis)
+            img_sch_list.append(img_sch)
+
+        job_sch = JobSchema(
+            id=job.id, generator_id=job.generator_id, images=img_sch_list
+        )
+        return job_sch
+
+    async def create(self, images_folder_path: str, input: JobUserInput) -> JobSchema:
         job_db = await Job.create(generator_id=input.generator_id)
-        list_img_sch = []
+        img_sch_list = []
         for img_input in input.images:
             img_filename = str(uuid.uuid4())
             kwargs = {}
-            kwargs["generator_id"] = (input.generator_id,)
-            kwargs["job_id"] = (job_db.id,)
-            kwargs["file_path"] = (
-                os.path.join(
-                    config.images_path, img_filename + "." + img_input.file_type
-                ),
+            kwargs["generator_id"] = input.generator_id
+            kwargs["job_id"] = job_db.id
+            kwargs["file_path"] = os.path.join(
+                images_folder_path, img_filename + "." + img_input.file_type
             )
             kwargs["prompt"] = img_input.prompt
             kwargs["negative_prompt"] = img_input.negative_prompt
+            kwargs["file_type"] = img_input.file_type
             if img_input.seed:
                 kwargs["seed"] = img_input.seed
 
@@ -58,7 +85,7 @@ class JobRepo:
             for ci in img_input.control_images:
                 pose_filename = "pose-" + str(uuid.uuid4())
                 pose_binary = base64.b64decode(ci.data_base64)
-                pose_file_path = os.path.join(config.images_path, pose_filename)
+                pose_file_path = os.path.join(images_folder_path, pose_filename)
                 with open(pose_file_path, "wb") as output_file:
                     _ = output_file.write(pose_binary)
 
@@ -72,10 +99,10 @@ class JobRepo:
 
             img_sch = await serialize_image(img_db, ci_dbs)
 
-            list_img_sch.append(img_sch)
+            img_sch_list.append(img_sch)
 
         return JobSchema(
-            id=job_db.id, generator_id=job_db.generator_id, images=list_img_sch
+            id=job_db.id, generator_id=job_db.generator_id, images=img_sch_list
         )
 
 

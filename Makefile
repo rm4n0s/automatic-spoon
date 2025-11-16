@@ -1,2 +1,2 @@
-dev:
-	python run.py #--reload=True
+run:
+	python run.py
