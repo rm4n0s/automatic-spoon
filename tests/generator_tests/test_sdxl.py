@@ -32,24 +32,24 @@ from src.core.enums import (
 from tests.utils import read_test_config
 
 
-def test_sd_compel():
+def test_sdxl_compel():
     logging.basicConfig(level=logging.DEBUG)
     multiprocessing.set_start_method("spawn")
     config = read_config("config.yaml")
     enable_hugging_face_envs(config)
-    cfg = read_test_config("test-config.yaml")
-    assert cfg.checkpoint_sd.file_path is not None
-    assert cfg.vae_sd.file_path is not None
+    cfg = read_test_config("tests/test-config.yaml")
+    assert cfg.checkpoint_sdxl.file_path is not None
+    assert cfg.vae_sdxl.file_path is not None
 
     sd_model = AIModelSchema(
         id=1,
         name="sd_model",
         status=AIModelStatus.READY,
-        path=cfg.checkpoint_sd.file_path,
+        path=cfg.checkpoint_sdxl.file_path,
         path_type=PathType.FILE,
         variant=Variant.FP16,
         model_type=AIModelType.CHECKPOINT,
-        model_base=AIModelBase.SD,
+        model_base=AIModelBase.SDXL,
         tags="anime",
     )
 
@@ -57,29 +57,29 @@ def test_sd_compel():
         id=1,
         name="vae_model",
         status=AIModelStatus.READY,
-        path=cfg.vae_sd.file_path,
+        path=cfg.vae_sdxl.file_path,
         path_type=PathType.FILE,
         variant=Variant.FP16,
         model_type=AIModelType.VAE,
-        model_base=AIModelBase.SD,
+        model_base=AIModelBase.SDXL,
         tags="anime",
     )
 
     engine = EngineSchema(
         id=1,
-        name="test sd compel",
+        name="test sdxl compel",
         long_prompt_technique=LongPromptTechnique.COMPEL,
         checkpoint_model=sd_model,
         vae_model=vae_model,
         lora_models=[],
         control_net_models=[],
         embedding_models=[],
-        scheduler=Scheduler.DPM2AKARRAS,
+        scheduler=Scheduler.EULERA,
         guidance_scale=7.0,
-        seed=10,
-        width=512,
-        height=512,
-        steps=30,
+        seed=223123135,
+        width=1024,
+        height=1024,
+        steps=25,
     )
 
     gen = GeneratorSchema(
@@ -112,8 +112,8 @@ def test_sd_compel():
         id=1,
         job_id=1,
         generator_id=1,
-        prompt="a king, blue hair, (white background:1.5)",
-        negative_prompt="bad quality",
+        prompt="masterpiece,best quality,1boy, 30 years old, king, blue hair, (white background:1.5)",
+        negative_prompt="bad quality,worst quality,worst detail,nsfw,naked,girl",
         ready=False,
         file_path=f"/tmp/king-{img_id}.png",
     )
@@ -135,8 +135,8 @@ def test_sd_compel():
         id=2,
         job_id=2,
         generator_id=1,
-        prompt="a queen, red hair, (white background:1.5)",
-        negative_prompt="bad quality",
+        prompt="masterpiece,best quality,1girl, a queen, red hair,sits, full body view (white background:1.5)",
+        negative_prompt="bad quality,worst quality,worst detail,",
         ready=False,
         file_path=f"/tmp/queen-{img_id}.png",
     )
@@ -145,8 +145,8 @@ def test_sd_compel():
         id=3,
         job_id=2,
         generator_id=1,
-        prompt="a prince, blonde hair, (white background:1.5)",
-        negative_prompt="bad quality",
+        prompt="masterpiece,best quality,1 boy, a prince, blonde hair, (white background:1.5)",
+        negative_prompt="bad quality,worst quality,worst detail,nsfw,naked,girl",
         ready=False,
         file_path=f"/tmp/prince-{img_id}.png",
     )

@@ -32,19 +32,8 @@ run main.py
 
 
 ## Test
-First make sure you have created test-config.yaml like in the example test-config-example.yaml <br/>
+First make sure you have created test-config.yaml inside the tests/ like in the example test-config-example.yaml <br/>
 Afte that execute
 ```bash
 pytest -s --log-cli-level=DEBUG
-```
-
-## Problems
-When deleting .venv and recreating, some times it throws an error that can't find CUDA driver or something like that.<br/>
-So I clean the packages and try again
-
-```bash
-rm -rf ~/.cache/pip
-pip cache purge
-pip uninstall rocm torch torchaudio torchvision
-bash install.sh
 ```

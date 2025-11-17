@@ -18,9 +18,12 @@ class TestConfig(DataClassYAMLMixin):
     vae_sdxl: ModelPath
     checkpoint_sd: ModelPath
     checkpoint_sdxl: ModelPath
-    openpose: ModelPath
-    mediapipe: ModelPath
-    midas: ModelPath
+    openpose_sd: ModelPath
+    openpose_sdxl: ModelPath
+    mediapipe_sd: ModelPath
+    mediapipe_sdxl: ModelPath
+    midas_sd: ModelPath
+    midas_sdxl: ModelPath
     loras_sd: list[ModelPath]
     loras_sdxl: list[ModelPath]
     embeddings_sd: list[ModelPath]

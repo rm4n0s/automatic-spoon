@@ -373,6 +373,7 @@ def run_pipe(pipe, engine: EngineSchema, img_sch: ImageSchema):  # pyright: igno
         kwargs["negative_pooled_prompt_embeds"] = (
             prompt_embeddings.negative_pooled_prompt_embeds
         )
+
     else:
         kwargs["prompt"] = prompt
         kwargs["negative_prompt"] = negative_prompt

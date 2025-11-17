@@ -17,15 +17,27 @@ checkpoint_sdxl:
   file_path: "file path of .safetensors"
   hugging_face: "the repo id of a .safetensors"
 
-openpose:
+openpose_sd:
   file_path: "file path of .safetensors"
   hugging_face: "for ex lllyasviel/control_v11p_sd15_openpose"
 
-mediapipe:
+openpose_sdxl:
   file_path: "file path of .safetensors"
   hugging_face: "for ex lllyasviel/control_v11p_sd15_openpose"
 
-midas:
+mediapipe_sd:
+  file_path: "file path of .safetensors"
+  hugging_face: "for ex lllyasviel/control_v11p_sd15_openpose"
+
+mediapipe_sdxl:
+  file_path: "file path of .safetensors"
+  hugging_face: "for ex lllyasviel/control_v11p_sd15_openpose"
+
+midas_sd:
+  file_path: "file path of .safetensors"
+  hugging_face: "for ex. lllyasviel/control_v11f1p_sd15_depth"
+
+midas_sdxl:
   file_path: "file path of .safetensors"
   hugging_face: "for ex. lllyasviel/control_v11f1p_sd15_depth"
 
