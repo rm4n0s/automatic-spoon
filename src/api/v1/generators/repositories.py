@@ -2,7 +2,6 @@ from pytsterrors import TSTError
 
 from src.api.v1.engines.repositories import serialize_engine
 from src.core.enums import GeneratorStatus
-from src.core.tags.user_errors import GENERATOR_NOT_FOUND_ERROR
 from src.db.models import Engine, Generator
 
 from .schemas import GeneratorSchema
@@ -23,7 +22,9 @@ class GeneratorRepo:
         g = await Generator.get_or_none(id=id)
         if not g:
             raise TSTError(
-                GENERATOR_NOT_FOUND_ERROR, f"Generator with ID {id} not found"
+                "generator-is-not-found",
+                f"Generator with ID {id} not found",
+                metadata={"status_code": 404},
             )
 
         return await serialize_generator(g)
@@ -32,7 +33,9 @@ class GeneratorRepo:
         g = await Generator.get_or_none(id=id)
         if not g:
             raise TSTError(
-                GENERATOR_NOT_FOUND_ERROR, f"Generator with ID {id} not found"
+                "generator-is-not-found",
+                f"Generator with ID {id} not found",
+                metadata={"status_code": 404},
             )
 
         g.status = status
@@ -48,6 +51,16 @@ class GeneratorRepo:
             gsls.append(await serialize_generator(g))
 
         return gsls
+
+    async def delete(self, id: int):
+        g = await Generator.get_or_none(id=id)
+        if not g:
+            raise TSTError(
+                "generator-not-found",
+                f"Generator with ID {id} not found",
+                metadata={"status_code": 404},
+            )
+        await g.delete()
 
     async def exists(self, id: int) -> bool:
         return await Generator.exists(id=id)

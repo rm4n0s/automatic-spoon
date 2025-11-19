@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 
 from src.api.v1.aimodels.schemas import AIModelSchema
-from src.core.enums import FileImageType
+from src.core.enums import FileImageType, JobStatus
 
 
 class ControlNetImageSchema(BaseModel):
@@ -33,3 +33,4 @@ class JobSchema(BaseModel):
     id: int | None
     generator_id: int
     images: list[ImageSchema]
+    status: JobStatus

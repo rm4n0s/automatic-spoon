@@ -1,6 +1,10 @@
 import base64
 import os
 import uuid
+from typing import Any
+
+from pytsterrors import TSTError
+from tortoise.expressions import Q
 
 from src.api.v1.aimodels.schemas import AIModelSchema
 from src.db.models import AIModel, ControlNetImage, Image, Job
@@ -22,7 +26,30 @@ class JobRepo:
                 img_sch_list.append(img_sch)
 
             job_sch = JobSchema(
-                id=job.id, generator_id=job.generator_id, images=img_sch_list
+                id=job.id,
+                generator_id=job.generator_id,
+                images=img_sch_list,
+                status=job.status,
+            )
+            job_sch_list.append(job_sch)
+        return job_sch_list
+
+    async def filter(self, *args: Q, **kwargs: Any) -> list[JobSchema]:  # pyright: ignore[reportExplicitAny]
+        jobs = await Job.filter(*args, **kwargs)
+        job_sch_list = []
+        for job in jobs:
+            imgs = await Image.filter(job_id=job.id)
+            img_sch_list = []
+            for img in imgs:
+                cnis = await ControlNetImage.filter(job_id=job.id, image_id=img.id)
+                img_sch = await serialize_image(img, cnis)
+                img_sch_list.append(img_sch)
+
+            job_sch = JobSchema(
+                id=job.id,
+                generator_id=job.generator_id,
+                images=img_sch_list,
+                status=job.status,
             )
             job_sch_list.append(job_sch)
         return job_sch_list
@@ -40,7 +67,10 @@ class JobRepo:
             img_sch_list.append(img_sch)
 
         job_sch = JobSchema(
-            id=job.id, generator_id=job.generator_id, images=img_sch_list
+            id=job.id,
+            generator_id=job.generator_id,
+            images=img_sch_list,
+            status=job.status,
         )
         return job_sch
 
@@ -91,6 +121,7 @@ class JobRepo:
 
                 ci_db = await ControlNetImage.create(
                     image_id=img_db.id,
+                    job_id=job_db.id,
                     aimodel_id=ci.aimodel_id,
                     controlnet_conditioning_scale=ci.controlnet_conditioning_scale,
                     file_path=pose_file_path,
@@ -102,8 +133,43 @@ class JobRepo:
             img_sch_list.append(img_sch)
 
         return JobSchema(
-            id=job_db.id, generator_id=job_db.generator_id, images=img_sch_list
+            id=job_db.id,
+            generator_id=job_db.generator_id,
+            images=img_sch_list,
+            status=job_db.status,
         )
+
+    async def delete(self, job_id: int):
+        job = await Job.get_or_none(id=job_id)
+        if not job:
+            raise TSTError(
+                "job-not-found",
+                f"Job with ID {job_id} not found",
+                metadata={"status_code": 404},
+            )
+
+        await job.delete()
+
+        imgs = await Image.filter(job_id=job_id)
+        cnets = await ControlNetImage.filter(job_id=job_id)
+        for cnet in cnets:
+            await cnet.delete()
+
+        for img in imgs:
+            await img.delete()
+
+    async def delete_by_generator(self, generator_id: int):
+        jobs = await Job.filter(generator_id=generator_id)
+        for job in jobs:
+            await job.delete()
+
+            imgs = await Image.filter(job_id=job.id)
+            cnets = await ControlNetImage.filter(job_id=job.id)
+            for cnet in cnets:
+                await cnet.delete()
+
+            for img in imgs:
+                await img.delete()
 
 
 async def serialize_image(img_db: Image, cni_dbs: list[ControlNetImage]) -> ImageSchema:

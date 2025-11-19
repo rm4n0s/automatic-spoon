@@ -26,6 +26,7 @@ class Image(TimestampMixin, Model):
 class ControlNetImage(TimestampMixin, Model):
     id = fields.IntField(primary_key=True)
     image_id = fields.IntField()
+    job_id = fields.IntField()
     aimodel_id = fields.IntField(null=True, default=None)
     file_path = fields.TextField()
     controlnet_conditioning_scale = fields.FloatField()

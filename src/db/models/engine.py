@@ -28,5 +28,5 @@ class AIModelForEngine(Model):
     id = fields.IntField(primary_key=True)
     engine_id = fields.IntField()
     weight = fields.FloatField(null=True)
-    model_id = fields.IntField()
-    model_type = fields.CharEnumField(enum_type=AIModelType)
+    aimodel_id = fields.IntField()
+    aimodel_type = fields.CharEnumField(enum_type=AIModelType)

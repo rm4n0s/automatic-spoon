@@ -2,7 +2,6 @@ from pytsterrors.exception import TSTError
 
 from src.api.v1.aimodels.repositories import AIModelRepo
 from src.core.enums import AIModelType
-from src.core.tags.user_errors import WRONG_INPUT
 
 from .repositories import EngineRepo
 from .schemas import EngineSchema, LoraAndWeight
@@ -35,7 +34,11 @@ class EngineService:
     async def create(self, input: EngineUserInput) -> EngineSchema | None:
         errs = await self._validate(input)
         if len(errs) > 0:
-            raise TSTError(WRONG_INPUT, "", metadata={"error_per_field": errs})
+            raise TSTError(
+                "incorrect-input",
+                "Incorrect input",
+                metadata={"error_per_field": errs, "status_code": 400},
+            )
 
         checkpoint = await self.aimodel_repo.get_one(input.checkpoint_model_id)
         vae = None
@@ -78,3 +81,12 @@ class EngineService:
         )
         res = await self.engine_repo.create(engine)
         return res
+
+    async def delete(self, id: int) -> str | None:
+        if await self.engine_repo.is_used_by_generator(id):
+            raise TSTError(
+                "generator-is-using-engine",
+                f"Engine with {id} can't be deleted because it is used by a generator",
+                metadata={"status_code": 400},
+            )
+        await self.engine_repo.delete(id)

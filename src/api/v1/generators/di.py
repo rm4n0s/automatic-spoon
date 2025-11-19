@@ -22,9 +22,10 @@ class GeneratorServiceProvider(Provider):
         self,
         generator_repo: GeneratorRepo,
         engine_repo: EngineRepo,
+        job_repo: JobRepo,
         manager: ProcessManager,
     ) -> GeneratorService:
-        return GeneratorService(generator_repo, engine_repo, manager)
+        return GeneratorService(generator_repo, engine_repo, job_repo, manager)
 
 
 class ProcessManagerProvider(Provider):

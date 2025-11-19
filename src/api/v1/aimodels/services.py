@@ -1,3 +1,5 @@
+from pytsterrors import TSTError
+
 from src.core.enums import AIModelStatus
 
 from .repositories import AIModelRepo
@@ -6,10 +8,10 @@ from .user_inputs import AIModelUserInput
 
 
 class AIModelService:
-    repo: AIModelRepo
+    aimodel_repo: AIModelRepo
 
-    def __init__(self, repo: AIModelRepo):
-        self.repo = repo
+    def __init__(self, aimodel_repo: AIModelRepo):
+        self.aimodel_repo = aimodel_repo
 
     async def create(self, input: AIModelUserInput) -> AIModelSchema:
         data = AIModelSchema(
@@ -25,4 +27,13 @@ class AIModelService:
             trigger_neg_words=input.trigger_neg_words,
         )
 
-        return await self.repo.create(data)
+        return await self.aimodel_repo.create(data)
+
+    async def delete(self, id: int) -> str | None:
+        if await self.aimodel_repo.is_used_by_engine(id):
+            raise TSTError(
+                "engine-is-using-aimodel",
+                f"AIModel with ID {id} can't be deleted while is being used by an engine",
+                metadata={"status_code": 400},
+            )
+        await self.aimodel_repo.delete(id)

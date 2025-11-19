@@ -28,3 +28,10 @@ async def create_aimodel(
     svc: FromDishka[AIModelService],
 ):
     return await svc.create(payload)
+
+
+@router.delete("/{id}", response_model=None, status_code=status.HTTP_204_NO_CONTENT)
+@inject
+async def delete(id: int, svc: FromDishka[AIModelService]):
+    _ = await svc.delete(id)
+    return None

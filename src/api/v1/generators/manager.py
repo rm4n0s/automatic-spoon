@@ -150,10 +150,7 @@ class ProcessManager:
             return
 
         def _start_generator(gen: GeneratorSchema):
-            if gen.id is None:
-                raise TSTError(
-                    "generator-id-is-none", "Tried to start a generator with no ID"
-                )
+            assert gen.id is not None
 
             commandq: Queue[GeneratorCommand] = multiprocessing.Queue()
 

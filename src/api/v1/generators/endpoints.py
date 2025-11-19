@@ -47,6 +47,11 @@ async def close_generator(id: int, svc: FromDishka[GeneratorService]):
     return await svc.close_generator(id)
 
 
-@router.delete("/{id}")
-async def delete_generator():
-    pass
+@router.delete("/{id}", response_model=None, status_code=status.HTTP_204_NO_CONTENT)
+@inject
+async def delete_generator(
+    id: int,
+    svc: FromDishka[GeneratorService],
+):
+    _ = await svc.delete_generator(id)
+    return None

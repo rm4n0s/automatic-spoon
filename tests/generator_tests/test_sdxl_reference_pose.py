@@ -25,6 +25,7 @@ from src.core.enums import (
     GeneratorCommandType,
     GeneratorResultType,
     GeneratorStatus,
+    JobStatus,
     LongPromptTechnique,
     PathType,
     Scheduler,
@@ -141,7 +142,7 @@ def test_sd_compel():
         control_images=[pose_img_ref],
     )
     logging.debug("send job")
-    job = JobSchema(id=1, generator_id=1, images=[image_king])
+    job = JobSchema(id=1, generator_id=1, images=[image_king], status=JobStatus.WAITING)
 
     start = time.time()
     commandq.put(GeneratorCommand(command=GeneratorCommandType.JOB, value=job))

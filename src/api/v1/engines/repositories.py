@@ -2,13 +2,26 @@ from pytsterrors import TSTError
 
 from src.api.v1.aimodels.schemas import AIModelSchema
 from src.core.enums import AIModelType
-from src.core.tags.user_errors import ENGINE_NOT_FOUND_ERROR
-from src.db.models import AIModel, AIModelForEngine, Engine
+from src.db.models import AIModel, AIModelForEngine, Engine, Generator
 
 from .schemas import EngineSchema, LoraAndWeight
 
 
 class EngineRepo:
+    async def delete(self, id: int):
+        obj = await Engine.get_or_none(id=id)
+        if not obj:
+            raise TSTError(
+                "engine-not-found",
+                f"Engine with ID {id} not found",
+                metadata={"status_code": 404},
+            )
+
+        await obj.delete()
+
+    async def is_used_by_generator(self, id: int) -> bool:
+        return await Generator.exists(engine_id=id)
+
     async def create(self, input: EngineSchema) -> EngineSchema:
         e = await Engine.create(
             name=input.name,
@@ -71,7 +84,11 @@ class EngineRepo:
     async def get_one(self, id: int) -> EngineSchema:
         e = await Engine.get_or_none(id=id)
         if not e:
-            raise TSTError(ENGINE_NOT_FOUND_ERROR, f"Engine with ID {id} not found")
+            raise TSTError(
+                "engine-not-found",
+                f"Engine with ID {id} not found",
+                metadata={"status_code": 404},
+            )
 
         return await serialize_engine(e)
 

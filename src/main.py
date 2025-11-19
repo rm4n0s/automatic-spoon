@@ -14,7 +14,6 @@ from src.api.v1.di_container import create_dishka_container
 from src.api.v1.generators.manager import ProcessManager
 from src.api.v1.router import api_router
 from src.core.config import Config, enable_hugging_face_envs, read_config
-from src.core.tags.user_errors import user_error_responses
 from src.db.database import async_close_db, async_init_db
 
 
@@ -34,21 +33,23 @@ async def lifespan(app: FastAPI):
 def add_exception_handlers(app: FastAPI):
     @app.exception_handler(TSTError)
     async def tst_error_handler(request: Request, exc: TSTError):
-        error = user_error_responses.get(exc.tag())
-        if error is not None:
-            content: dict[str, typing.Any] = {"error": error.response}
-            meta = exc.metadata()
-            if meta is not None:
-                content["metadata"] = meta
-            return JSONResponse(
-                status_code=error.status,
-                content=content,
-            )
-        else:
-            return JSONResponse(
-                status_code=500,
-                content={"error": exc.message(), "for_admin": exc.to_json()},
-            )
+        meta = exc.metadata()
+        content: dict[str, str] = {"error": exc.message()}
+        if meta is not None:
+            if "error_per_field" in meta.keys():
+                content["error_per_field"] = meta["error_per_field"]
+
+            if "status_code" in meta.keys():
+                status_code = meta["status_code"]
+                return JSONResponse(
+                    status_code=status_code,
+                    content=content,
+                )
+
+        return JSONResponse(
+            status_code=500,
+            content={"error": exc.message(), "for_admin": exc.to_json()},
+        )
 
     @app.exception_handler(Exception)
     async def unexpected_error_handler(request: Request, exc: Exception):
