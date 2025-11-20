@@ -56,6 +56,12 @@ class GeneratorProcess:
             controlnets = create_controlnets(self._engine.control_net_models)
 
         pipe = create_pipe(self._engine.checkpoint_model, vae, controlnets)
+        if self._engine.clip_skip is not None:
+            clip_skip = self._engine.clip_skip
+            pipe.text_encoder.text_model.encoder.layers = (
+                pipe.text_encoder.text_model.encoder.layers[: -(clip_skip - 1)]
+            )
+
         if len(self._engine.lora_models) > 0:
             load_loras(pipe, self._engine.lora_models)
 

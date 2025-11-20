@@ -81,6 +81,7 @@ def test_sdxl_compel():
         width=1024,
         height=1024,
         steps=25,
+        clip_skip=2,
     )
 
     gen = GeneratorSchema(

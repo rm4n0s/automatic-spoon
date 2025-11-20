@@ -78,6 +78,7 @@ class EngineService:
             controlnet_conditioning_scale=input.controlnet_conditioning_scale,
             control_guidance_start=input.control_guidance_start,
             control_guidance_end=input.control_guidance_end,
+            clip_skip=input.clip_skip,
         )
         res = await self.engine_repo.create(engine)
         return res

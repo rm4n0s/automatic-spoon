@@ -19,9 +19,10 @@ class Engine(TimestampMixin, Model):
     width = fields.IntField()
     height = fields.IntField()
     steps = fields.IntField()
-    controlnet_conditioning_scale = fields.FloatField(null=True)  # Adjust 0.8-1.2
+    controlnet_conditioning_scale = fields.FloatField(null=True)
     control_guidance_start = fields.FloatField(null=True)
     control_guidance_end = fields.FloatField(null=True)
+    clip_skip = fields.IntField(null=True)
 
 
 class AIModelForEngine(Model):

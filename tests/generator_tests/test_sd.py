@@ -81,6 +81,7 @@ def test_sd_compel():
         width=512,
         height=512,
         steps=30,
+        clip_skip=2,
     )
 
     gen = GeneratorSchema(
@@ -136,7 +137,7 @@ def test_sd_compel():
         id=2,
         job_id=2,
         generator_id=1,
-        prompt="a queen, red hair, (white background:1.5)",
+        prompt="masterpiece, a queen, red hair, (white background:1.5)",
         negative_prompt="bad quality",
         ready=False,
         file_path=f"/tmp/queen-{img_id}.png",

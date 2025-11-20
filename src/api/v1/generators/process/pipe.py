@@ -28,6 +28,7 @@ from diffusers import (
 )
 from pytsterrors import TSTError
 from sd_embed.embedding_funcs import get_weighted_text_embeddings_sdxl
+from transformers import CLIPTextModel, CLIPTokenizer
 
 from src.api.v1.aimodels.schemas import AIModelSchema
 from src.api.v1.engines.schemas import (
@@ -97,7 +98,6 @@ def create_vae(vae: AIModelSchema) -> AutoencoderKL:
 def create_pipe(
     checkpoint: AIModelSchema, vae: AutoencoderKL | None, cnets: list[ControlNetModel]
 ) -> DiffusionPipeline:
-    print(vae)
     variant = str(checkpoint.variant)
     torch_dtype = torch.float16
     if checkpoint.variant == Variant.FP32:
@@ -108,6 +108,7 @@ def create_pipe(
         "use_safetensors": True,
         "variant": variant,
     }
+
     # WITHOUT CONTROLL NET
     if (
         checkpoint.model_base == AIModelBase.SD

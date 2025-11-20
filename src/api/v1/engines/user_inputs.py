@@ -30,3 +30,4 @@ class EngineUserInput(BaseModel):
     controlnet_conditioning_scale: float | None = None
     control_guidance_start: float | None = None
     control_guidance_end: float | None = None
+    clip_skip: int | None = None

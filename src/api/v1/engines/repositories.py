@@ -1,3 +1,5 @@
+from pydoc import cli
+
 from pytsterrors import TSTError
 
 from src.api.v1.aimodels.schemas import AIModelSchema
@@ -35,6 +37,7 @@ class EngineRepo:
             controlnet_conditioning_scale=input.controlnet_conditioning_scale,
             control_guidance_start=input.control_guidance_start,
             control_guidance_end=input.control_guidance_end,
+            clip_skip=input.clip_skip,
         )
         input.id = e.id
         _ = await AIModelForEngine.create(
@@ -105,7 +108,7 @@ async def serialize_engine(e: Engine) -> EngineSchema:
     embedding_models = []
     controlnet_models = []
     for v in aoes:
-        match v.model_type:
+        match v.aimodel_type:
             case AIModelType.CHECKPOINT:
                 checkpoint = await AIModel.get_or_none(id=v.id)
                 if checkpoint:
@@ -155,4 +158,5 @@ async def serialize_engine(e: Engine) -> EngineSchema:
         controlnet_conditioning_scale=e.controlnet_conditioning_scale,
         control_guidance_start=e.control_guidance_start,
         control_guidance_end=e.control_guidance_end,
+        clip_skip=e.clip_skip,
     )
