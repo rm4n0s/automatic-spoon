@@ -35,7 +35,7 @@ from src.api.v1.engines.schemas import (
     EngineSchema,
     LoraAndWeight,
 )
-from src.api.v1.jobs.schemas import ImageSchema
+from src.api.v1.images.schemas import ImageSchema
 from src.core.enums import (
     AIModelBase,
     LongPromptTechnique,

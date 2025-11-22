@@ -1,0 +1,29 @@
+from pydantic import BaseModel, Field
+
+from src.api.v1.aimodels.schemas import AIModelSchema
+from src.core.enums import FileImageType
+
+
+class ControlNetImageSchema(BaseModel):
+    aimodel: AIModelSchema | None
+    image_file_path: str
+    controlnet_conditioning_scale: float
+
+
+class ImageSchema(BaseModel):
+    id: int | None
+    job_id: int
+    generator_id: int
+    prompt: str
+    negative_prompt: str
+    ready: bool
+    file_path: str
+    seed: int | None = Field(default=None)
+    guidance_scale: float | None = Field(default=None)
+    width: int | None = Field(default=None)
+    height: int | None = Field(default=None)
+    steps: int | None = Field(default=None)
+    control_images: list[ControlNetImageSchema] = Field(default=[])
+    file_type: FileImageType = Field(default=FileImageType.PNG)
+    control_guidance_start: float | None = None
+    control_guidance_end: float | None = None

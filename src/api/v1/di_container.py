@@ -8,6 +8,8 @@ from src.api.v1.generators.di import (
     GeneratorServiceProvider,
     ProcessManagerProvider,
 )
+from src.api.v1.gpus.di import GPUServiceProvider
+from src.api.v1.images.di import ImageRepoProvider
 from src.api.v1.jobs.di import JobRepoProvider, JobServiceProvider
 from src.core.config import Config
 from src.core.config.di import ConfigProvider
@@ -26,6 +28,8 @@ def create_dishka_container(config: Config):
         FastapiProvider(),
         JobRepoProvider(),
         JobServiceProvider(),
+        ImageRepoProvider(),
+        GPUServiceProvider(),
     ]
     container = make_async_container(*providers)
 

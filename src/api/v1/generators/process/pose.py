@@ -7,7 +7,7 @@ from PIL import Image
 from pytsterrors import TSTError
 
 from src.api.v1.engines.schemas import EngineSchema
-from src.api.v1.jobs.schemas import ImageSchema
+from src.api.v1.images.schemas import ImageSchema
 from src.core.enums import ControlNetType
 
 

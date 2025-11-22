@@ -14,6 +14,7 @@ class ModelPath:
 
 @dataclass
 class TestConfig(DataClassYAMLMixin):
+    gpu_id: int
     vae_sd: ModelPath
     vae_sdxl: ModelPath
     checkpoint_sd: ModelPath

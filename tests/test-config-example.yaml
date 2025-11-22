@@ -1,6 +1,7 @@
 # These is an example for configuring tests.
-# You need to feel these variables and rename the file to test-config.yaml and then call pytest
+# You need to fill these variables and rename the file to test-config.yaml and then call pytest
 #
+gpu_id: 0
 vae_sd:
   file_path: "file path of .safetensors"
   hugging_face: "the repo id of ..safetensors"

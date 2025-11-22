@@ -15,7 +15,8 @@ from src.api.v1.generators.process.types import (
     GeneratorResult,
 )
 from src.api.v1.generators.schemas import GeneratorSchema
-from src.api.v1.jobs.schemas import ImageSchema, JobSchema
+from src.api.v1.images.schemas import ImageSchema
+from src.api.v1.jobs.schemas import JobSchema
 from src.core.config import enable_hugging_face_envs, read_config
 from src.core.enums import (
     AIModelBase,
@@ -30,7 +31,7 @@ from src.core.enums import (
     Scheduler,
     Variant,
 )
-from tests.utils import read_test_config
+from src.utils import read_test_config
 
 
 def test_sd_compel():
