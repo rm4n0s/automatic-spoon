@@ -27,8 +27,10 @@ from diffusers import (
     UniPCMultistepScheduler,
 )
 from pytsterrors import TSTError
+
+# from transformers import CLIPTextModel, CLIPTokenizer
+from safetensors.torch import load_file
 from sd_embed.embedding_funcs import get_weighted_text_embeddings_sdxl
-from transformers import CLIPTextModel, CLIPTokenizer
 
 from src.api.v1.aimodels.schemas import AIModelSchema
 from src.api.v1.engines.schemas import (
@@ -207,16 +209,79 @@ def load_loras(pipe: DiffusionPipeline, loras: list[LoraAndWeight]):
             pipe.fuse_lora(lora_scale=lora_weight)
 
 
+def load_sdxl_embedding(pipe, embed_path: str, token: str):
+    # Load the safetensors file
+    state_dict = load_file(embed_path)
+
+    # Extract the embeddings for the two text encoders
+    if "clip_l" not in state_dict or "clip_g" not in state_dict:
+        raise KeyError(
+            "Embedding file missing 'clip_l' or 'clip_g' keys - verify it's an SDXL-compatible embedding."
+        )
+
+    clip_l_emb = state_dict["clip_l"].to(pipe.device).to(pipe.dtype)
+    clip_g_emb = state_dict["clip_g"].to(pipe.device).to(pipe.dtype)
+
+    # Add the token to both tokenizers
+    pipe.tokenizer.add_tokens([token])
+    pipe.tokenizer_2.add_tokens([token])
+
+    # Resize the token embeddings for both text encoders
+    pipe.text_encoder.resize_token_embeddings(len(pipe.tokenizer))
+    pipe.text_encoder_2.resize_token_embeddings(len(pipe.tokenizer_2))
+
+    # Get the token IDs
+    token_id_l = pipe.tokenizer.convert_tokens_to_ids(token)
+    token_id_g = pipe.tokenizer_2.convert_tokens_to_ids(token)
+
+    # Inject into text_encoder (CLIP-L)
+    orig_embeds_l = pipe.text_encoder.get_input_embeddings()
+    new_embeds_l = torch.nn.Embedding(
+        orig_embeds_l.num_embeddings,
+        orig_embeds_l.embedding_dim,
+        padding_idx=orig_embeds_l.padding_idx,
+        device=pipe.device,
+        dtype=pipe.dtype,
+    )
+    new_embeds_l.weight.data[:] = orig_embeds_l.weight.data[:]
+    if clip_l_emb.dim() == 2:  # Multi-vector: average to single vector
+        new_embeds_l.weight.data[token_id_l] = clip_l_emb.mean(dim=0)
+    else:
+        new_embeds_l.weight.data[token_id_l] = clip_l_emb
+    pipe.text_encoder.set_input_embeddings(new_embeds_l)
+
+    # Inject into text_encoder_2 (CLIP-G)
+    orig_embeds_g = pipe.text_encoder_2.get_input_embeddings()
+    new_embeds_g = torch.nn.Embedding(
+        orig_embeds_g.num_embeddings,
+        orig_embeds_g.embedding_dim,
+        padding_idx=orig_embeds_g.padding_idx,
+        device=pipe.device,
+        dtype=pipe.dtype,
+    )
+    new_embeds_g.weight.data[:] = orig_embeds_g.weight.data[:]
+    if clip_g_emb.dim() == 2:  # Multi-vector: average to single vector
+        new_embeds_g.weight.data[token_id_g] = clip_g_emb.mean(dim=0)
+    else:
+        new_embeds_g.weight.data[token_id_g] = clip_g_emb
+    pipe.text_encoder_2.set_input_embeddings(new_embeds_g)
+
+    print(f"Loaded SDXL embedding for token '{token}' from {embed_path}")
+
+
 def load_embeddings(pipe: DiffusionPipeline, embeddings: list[AIModelSchema]):
     for embed in embeddings:
         trigger = ""
         if embed.trigger_neg_words is not None:
-            trigger = embed.trigger_neg_words
+            trigger += embed.trigger_neg_words + " "
 
         if embed.trigger_pos_words is not None:
-            trigger = embed.trigger_pos_words
+            trigger += embed.trigger_pos_words + " "
 
-        pipe.load_textual_inversion(embed.path, token=trigger)
+        if embed.model_base == AIModelBase.SDXL:
+            load_sdxl_embedding(pipe, embed.path, trigger)
+        else:
+            pipe.load_textual_inversion(embed.path, token=trigger)
 
 
 def set_scheduler(pipe: DiffusionPipeline, scheduler_enum: Scheduler):
