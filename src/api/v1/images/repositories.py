@@ -61,6 +61,8 @@ async def serialize_image(img_db: Image, cni_dbs: list[ControlNetImage]) -> Imag
             aimodel=aimodel_sch,
             image_file_path=cni_db.file_path,
             controlnet_conditioning_scale=cni_db.controlnet_conditioning_scale,
+            canny_low_threshold=cni_db.canny_low_threshold,
+            canny_high_threshold=cni_db.canny_high_threshold,
         )
         list_cni_sch.append(cni_sch)
 

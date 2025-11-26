@@ -1,5 +1,7 @@
 #!/bin/bash
 
+pip install git+https://github.com/rm4n0s/automatic_spoon_client_sync.git@main
+
 # Install dependencies for development
 pip install pytest==8.4.2 \
             pytest-asyncio==1.2.0 \

@@ -15,13 +15,14 @@ from src.api.v1.generators.process.types import (
     GeneratorResult,
 )
 from src.api.v1.generators.schemas import GeneratorSchema
-from src.api.v1.images.schemas import ImageSchema
+from src.api.v1.images.schemas import ControlNetImageSchema, ImageSchema
 from src.api.v1.jobs.schemas import JobSchema
 from src.core.config import enable_hugging_face_envs, read_config
 from src.core.enums import (
     AIModelBase,
     AIModelStatus,
     AIModelType,
+    ControlNetType,
     GeneratorCommandType,
     GeneratorResultType,
     GeneratorStatus,
@@ -35,7 +36,7 @@ from src.core.enums import (
 from src.utils import read_test_config
 
 
-def test_sd_compel():
+def test_sd_canny_compel():
     logging.basicConfig(level=logging.DEBUG)
     multiprocessing.set_start_method("spawn")
     config = read_config("config.yaml")
@@ -43,10 +44,13 @@ def test_sd_compel():
     cfg = read_test_config("tests/test-config.yaml")
     assert cfg.checkpoint_sd.file_path is not None
     assert cfg.vae_sd.file_path is not None
+    assert cfg.canny_sd.hugging_face is not None
+    assert cfg.canny_sd.low_threshold is not None
+    assert cfg.canny_sd.high_threshold is not None
 
     sd_model = AIModelSchema(
         id=1,
-        name="sd_model",
+        name="sd model",
         status=AIModelStatus.READY,
         path=cfg.checkpoint_sd.file_path,
         path_type=PathType.FILE,
@@ -56,8 +60,21 @@ def test_sd_compel():
         tags="anime",
     )
 
+    canny_pose_model = AIModelSchema(
+        id=2,
+        name="canny pose model",
+        status=AIModelStatus.READY,
+        path=cfg.canny_sd.hugging_face,
+        path_type=PathType.HUGGING_FACE,
+        variant=Variant.FP16,
+        model_type=AIModelType.CONTROLNET,
+        control_net_type=ControlNetType.CANNY,
+        model_base=AIModelBase.SD,
+        tags="anime",
+    )
+
     vae_model = AIModelSchema(
-        id=1,
+        id=4,
         name="vae_model",
         status=AIModelStatus.READY,
         path=cfg.vae_sd.file_path,
@@ -75,7 +92,7 @@ def test_sd_compel():
         checkpoint_model=sd_model,
         vae_model=vae_model,
         lora_models=[],
-        control_net_models=[],
+        control_net_models=[canny_pose_model],
         embedding_models=[],
         scheduler=Scheduler.DPM2AKARRAS,
         guidance_scale=7.0,
@@ -84,7 +101,8 @@ def test_sd_compel():
         height=512,
         steps=30,
         pipe_type=PipeType.TXT2IMG,
-        clip_skip=2,
+        control_guidance_start=0.0,
+        control_guidance_end=0.8,
     )
 
     gen = GeneratorSchema(
@@ -112,15 +130,23 @@ def test_sd_compel():
     res = resultq.get()
     assert res.result == GeneratorResultType.READY
 
+    pose_img_ref = ControlNetImageSchema(
+        aimodel=None,
+        image_file_path="tests/test_data/reference-pose-img.png",
+        controlnet_conditioning_scale=0.5,
+        canny_low_threshold=cfg.canny_sd.low_threshold,
+        canny_high_threshold=cfg.canny_sd.high_threshold,
+    )
     img_id = str(uuid.uuid4())
     image_king = ImageSchema(
         id=1,
         job_id=1,
         generator_id=1,
-        prompt="a king, blue hair, (white background:1.5)",
-        negative_prompt="bad quality",
+        prompt="(masterpiece:1.2), (best quality:1.1), a dracula, pink hair, (white background:1.5)",
+        negative_prompt="(worst quality:1.5), (low quality:1.5), blurry, deformed, extra limbs",
         ready=False,
-        file_path=f"/tmp/king-{img_id}.png",
+        file_path=f"/tmp/dracula-{img_id}.png",
+        control_images=[pose_img_ref],
     )
     logging.debug("send job")
     job = JobSchema(id=1, generator_id=1, images=[image_king], status=JobStatus.WAITING)
@@ -134,47 +160,6 @@ def test_sd_compel():
     end = time.time()
     print(f"first job took {end - start}")
     assert os.path.isfile(job.images[0].file_path)
-
-    logging.debug("send job")
-    image_queen = ImageSchema(
-        id=2,
-        job_id=2,
-        generator_id=1,
-        prompt="masterpiece, a queen, red hair, (white background:1.5)",
-        negative_prompt="bad quality",
-        ready=False,
-        file_path=f"/tmp/queen-{img_id}.png",
-    )
-
-    image_prince = ImageSchema(
-        id=3,
-        job_id=2,
-        generator_id=1,
-        prompt="a prince, blonde hair, (white background:1.5)",
-        negative_prompt="bad quality",
-        ready=False,
-        file_path=f"/tmp/prince-{img_id}.png",
-    )
-
-    job = JobSchema(
-        id=2,
-        generator_id=1,
-        images=[image_queen, image_prince],
-        status=JobStatus.WAITING,
-    )
-
-    start = time.time()
-    commandq.put(GeneratorCommand(command=GeneratorCommandType.JOB, value=job))
-    res = resultq.get()
-    assert res.result == GeneratorResultType.IMAGE_FINISHED
-    res = resultq.get()
-    assert res.result == GeneratorResultType.IMAGE_FINISHED
-    res = resultq.get()
-    assert res.result == GeneratorResultType.JOB_FINISHED
-    end = time.time()
-    print(f"second job took {end - start}")
-    for img in job.images:
-        assert os.path.isfile(img.file_path)
 
     commandq.put(GeneratorCommand(command=GeneratorCommandType.CLOSE, value=None))
     res = resultq.get()

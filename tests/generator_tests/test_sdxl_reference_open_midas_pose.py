@@ -29,6 +29,7 @@ from src.core.enums import (
     JobStatus,
     LongPromptTechnique,
     PathType,
+    PipeType,
     Scheduler,
     Variant,
 )
@@ -97,6 +98,7 @@ def test_sd_compel():
         width=1024,
         height=1024,
         steps=25,
+        pipe_type=PipeType.TXT2IMG,
         control_guidance_start=0.0,
         control_guidance_end=0.8,
     )

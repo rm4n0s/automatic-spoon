@@ -125,6 +125,8 @@ class JobRepo:
                     aimodel_id=ci.aimodel_id,
                     controlnet_conditioning_scale=ci.controlnet_conditioning_scale,
                     file_path=pose_file_path,
+                    canny_low_threshold=ci.canny_low_threshold,
+                    canny_high_threshold=ci.canny_high_threshold,
                 )
                 ci_dbs.append(ci_db)
 

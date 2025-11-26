@@ -74,6 +74,7 @@ class EngineService:
             seed=input.seed,
             width=input.width,
             height=input.height,
+            pipe_type=input.pipe_type,
             long_prompt_technique=input.long_prompt_technique,
             controlnet_conditioning_scale=input.controlnet_conditioning_scale,
             control_guidance_start=input.control_guidance_start,

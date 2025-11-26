@@ -28,6 +28,7 @@ from src.core.enums import (
     JobStatus,
     LongPromptTechnique,
     PathType,
+    PipeType,
     Scheduler,
     Variant,
 )
@@ -82,6 +83,7 @@ def test_sdxl_compel():
         width=1024,
         height=1024,
         steps=25,
+        pipe_type=PipeType.TXT2IMG,
         clip_skip=2,
     )
 

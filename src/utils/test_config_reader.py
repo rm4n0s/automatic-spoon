@@ -10,6 +10,8 @@ class ModelPath:
     weight: float | None = None
     trigger_pos: str | None = None
     trigger_neg: str | None = None
+    low_threshold: int | None = None
+    high_threshold: int | None = None
 
 
 @dataclass
@@ -25,6 +27,8 @@ class TestConfig(DataClassYAMLMixin):
     mediapipe_sdxl: ModelPath
     midas_sd: ModelPath
     midas_sdxl: ModelPath
+    canny_sd: ModelPath
+    canny_sdxl: ModelPath
     loras_sd: list[ModelPath]
     loras_sdxl: list[ModelPath]
     embeddings_sd: list[ModelPath]

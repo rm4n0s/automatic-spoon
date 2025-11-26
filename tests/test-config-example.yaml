@@ -42,6 +42,18 @@ midas_sdxl:
   file_path: "file path of .safetensors"
   hugging_face: "for ex. lllyasviel/control_v11f1p_sd15_depth"
 
+canny_sd:
+  file_path: "file path of .safetensors"
+  hugging_face: "for ex lllyasviel/control_v11p_sd15_canny"
+  low_threshold: 70
+  high_threshold: 100
+
+canny_sdxl:
+  file_path: "file path of .safetensors"
+  hugging_face: "for ex diffusers/controlnet-canny-sdxl-1.0"
+  low_threshold: 70
+  high_threshold: 100
+
 loras_sd:
   - file_path: "file path of .safetensors"
     weight: 0.8

@@ -4,6 +4,7 @@ from tortoise.models import Model
 from src.core.enums import (
     AIModelType,
     LongPromptTechnique,
+    PipeType,
     Scheduler,
 )
 from src.db.models.common import TimestampMixin
@@ -19,6 +20,7 @@ class Engine(TimestampMixin, Model):
     width = fields.IntField()
     height = fields.IntField()
     steps = fields.IntField()
+    pipe_type = fields.CharEnumField(enum_type=PipeType)
     controlnet_conditioning_scale = fields.FloatField(null=True)
     control_guidance_start = fields.FloatField(null=True)
     control_guidance_end = fields.FloatField(null=True)

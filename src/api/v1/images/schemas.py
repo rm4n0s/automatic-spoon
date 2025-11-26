@@ -8,6 +8,8 @@ class ControlNetImageSchema(BaseModel):
     aimodel: AIModelSchema | None
     image_file_path: str
     controlnet_conditioning_scale: float
+    canny_low_threshold: int | None = None
+    canny_high_threshold: int | None = None
 
 
 class ImageSchema(BaseModel):

@@ -55,7 +55,7 @@ class GeneratorProcess:
         if len(self._engine.control_net_models) > 0:
             controlnets = create_controlnets(self._engine.control_net_models)
 
-        pipe = create_pipe(self._engine.checkpoint_model, vae, controlnets)
+        pipe = create_pipe(self._engine, vae, controlnets)
         if self._engine.clip_skip is not None:
             clip_skip = self._engine.clip_skip
             pipe.text_encoder.text_model.encoder.layers = (

@@ -29,13 +29,14 @@ from src.core.enums import (
     JobStatus,
     LongPromptTechnique,
     PathType,
+    PipeType,
     Scheduler,
     Variant,
 )
 from src.utils import read_test_config
 
 
-def test_sd_compel():
+def test_sd__openpose_midas_compel():
     logging.basicConfig(level=logging.DEBUG)
     multiprocessing.set_start_method("spawn")
     config = read_config("config.yaml")
@@ -111,6 +112,7 @@ def test_sd_compel():
         width=512,
         height=512,
         steps=30,
+        pipe_type=PipeType.TXT2IMG,
         control_guidance_start=0.0,
         control_guidance_end=0.8,
     )

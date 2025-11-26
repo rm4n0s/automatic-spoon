@@ -40,6 +40,12 @@ class ControlNetType(enum.StrEnum):
     MIDAS = "midas"
     OPENPOSE = "openpose"
     MEDIAPIPE = "mediapipe"
+    CANNY = "canny"
+
+
+class PipeType(enum.StrEnum):
+    TXT2IMG = "txt2img"
+    IMG2IMG = "img2img"
 
 
 class Scheduler(enum.StrEnum):
