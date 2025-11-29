@@ -4,18 +4,17 @@ from dataclasses import dataclass
 from multiprocessing.queues import Queue
 from threading import Lock, Thread
 
-from pytsterrors import TSTError
-
 from src.api.v1.jobs.repositories import JobRepo
 from src.core.enums import (
     GeneratorCommandType,
     GeneratorResultType,
     GeneratorStatus,
+    JobStatus,
     ManagerSignalType,
 )
 
 from .process.generator import start_generator
-from .process.types import GeneratorCommand, GeneratorResult
+from .process.types import GeneratorCommand, GeneratorResult, JobFinished
 from .repositories import GeneratorRepo
 from .schemas import GeneratorSchema
 
@@ -81,7 +80,8 @@ class ProcessManager:
                 case GeneratorResultType.JOB_STARTING:
                     asyncio.run(self.on_job_starting(res.generator_id))
                 case GeneratorResultType.JOB_FINISHED:
-                    asyncio.run(self.on_job_finished(res.generator_id))
+                    assert isinstance(res.value, JobFinished)
+                    asyncio.run(self.on_job_finished(res.generator_id, res.value))
                 case GeneratorResultType.READY:
                     asyncio.run(self.on_ready(res.generator_id))
                 case GeneratorResultType.CLOSED:
@@ -119,11 +119,15 @@ class ProcessManager:
 
         _ = await self._generator_repo.update_status(generator_id, GeneratorStatus.BUSY)
 
-    async def on_job_finished(self, generator_id: int):
+    async def on_job_finished(self, generator_id: int, job_finished: JobFinished):
         print("on job finished")
         with self._lock:
             self._procs[generator_id].status = GeneratorStatus.READY
 
+        job = await self._job_repo.update_status(
+            job_finished.job_id, JobStatus.FINISHED
+        )
+        print("finished job ", job)
         _ = await self._generator_repo.update_status(
             generator_id, GeneratorStatus.READY
         )

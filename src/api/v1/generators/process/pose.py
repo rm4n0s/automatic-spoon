@@ -57,9 +57,6 @@ def poses_from_reference_image(engine: EngineSchema, ci: ControlNetImageSchema):
 
 
 def prepare_pose_images(engine: EngineSchema, img_sch: ImageSchema):
-    if len(img_sch.control_images) == 0:
-        return (None, None)
-
     controlnet_conditioning_scales = []
     conditioning_images = []
     for ci in img_sch.control_images:

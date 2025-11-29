@@ -13,7 +13,9 @@ from src.db.models.common import TimestampMixin
 class Engine(TimestampMixin, Model):
     id = fields.IntField(primary_key=True)
     name = fields.TextField()
-    long_prompt_technique = fields.CharEnumField(enum_type=LongPromptTechnique)
+    long_prompt_technique = fields.CharEnumField(
+        enum_type=LongPromptTechnique, null=True
+    )
     scheduler = fields.CharEnumField(enum_type=Scheduler)
     guidance_scale = fields.FloatField()
     seed = fields.IntField()
@@ -32,4 +34,4 @@ class AIModelForEngine(Model):
     engine_id = fields.IntField()
     weight = fields.FloatField(null=True)
     aimodel_id = fields.IntField()
-    aimodel_type = fields.CharEnumField(enum_type=AIModelType)
+    model_type = fields.CharEnumField(enum_type=AIModelType)

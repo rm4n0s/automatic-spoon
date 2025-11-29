@@ -10,7 +10,7 @@ from .user_inputs import GeneratorUserInput
 router = APIRouter()
 
 
-@router.get("/", response_model=list[GeneratorSchema])
+@router.get("", response_model=list[GeneratorSchema])
 @inject
 async def get_generators(repo: FromDishka[GeneratorRepo]):
     return await repo.get_all()
@@ -22,7 +22,7 @@ async def get_generator(id: int, repo: FromDishka[GeneratorRepo]):
     return await repo.get_one(id)
 
 
-@router.post("/", response_model=GeneratorSchema, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=GeneratorSchema, status_code=status.HTTP_201_CREATED)
 @inject
 async def create_generator(
     payload: GeneratorUserInput,

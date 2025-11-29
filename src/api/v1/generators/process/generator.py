@@ -1,6 +1,7 @@
 import logging
 from multiprocessing.queues import Queue
 
+import torch
 from diffusers import DiffusionPipeline
 from pytsterrors import TSTError
 
@@ -108,6 +109,10 @@ class GeneratorProcess:
                     for img in job.images:
                         assert img.id
                         run_pipe(pipe, self._engine, img)
+                        print(
+                            "VRAM used size:",
+                            torch.cuda.max_memory_allocated() / 1024**3,
+                        )
                         self._result_queue.put(
                             GeneratorResult(
                                 generator_name=self._name,

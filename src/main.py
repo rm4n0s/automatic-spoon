@@ -33,6 +33,7 @@ async def lifespan(app: FastAPI):
 def add_exception_handlers(app: FastAPI):
     @app.exception_handler(TSTError)
     async def tst_error_handler(request: Request, exc: TSTError):
+        print(exc)
         meta = exc.metadata()
         content: dict[str, str] = {"error": exc.message()}
         if meta is not None:
@@ -53,6 +54,7 @@ def add_exception_handlers(app: FastAPI):
 
     @app.exception_handler(Exception)
     async def unexpected_error_handler(request: Request, exc: Exception):
+        print(exc)
         tst = TSTError(
             "unexpected_error",
             "an unexpected error:" + exc.__str__(),
@@ -101,4 +103,5 @@ def main():
         port=args.port,
         reload=args.reload,
         reload_dirs=args.reload_dirs,
+        workers=1,
     )

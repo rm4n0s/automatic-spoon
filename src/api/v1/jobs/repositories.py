@@ -7,6 +7,7 @@ from pytsterrors import TSTError
 from tortoise.expressions import Q
 
 from src.api.v1.images.repositories import serialize_image
+from src.core.enums import JobStatus
 from src.db.models import ControlNetImage, Image, Job
 
 from .schemas import JobSchema
@@ -59,6 +60,43 @@ class JobRepo:
         if job is None:
             return None
 
+        imgs = await Image.filter(job_id=job.id)
+        img_sch_list = []
+        for img in imgs:
+            cnis = await ControlNetImage.filter(image_id=img.id)
+            img_sch = await serialize_image(img, cnis)
+            img_sch_list.append(img_sch)
+
+        job_sch = JobSchema(
+            id=job.id,
+            generator_id=job.generator_id,
+            images=img_sch_list,
+            status=job.status,
+        )
+        return job_sch
+
+    async def get_one(self, id: int) -> JobSchema:
+        job = await self.get_or_none(id=id)
+        if not job:
+            raise TSTError(
+                "job-is-not-found",
+                f"Job with ID {id} not found",
+                metadata={"status_code": 404},
+            )
+
+        return job
+
+    async def update_status(self, id: int, status: JobStatus) -> JobSchema:
+        job = await Job.get_or_none(id=id)
+        if not job:
+            raise TSTError(
+                "job-is-not-found",
+                f"Job with ID {id} not found",
+                metadata={"status_code": 404},
+            )
+
+        job.status = status
+        await job.save()
         imgs = await Image.filter(job_id=job.id)
         img_sch_list = []
         for img in imgs:

@@ -1,5 +1,3 @@
-from pydoc import cli
-
 from pytsterrors import TSTError
 
 from src.api.v1.aimodels.schemas import AIModelSchema
@@ -20,6 +18,11 @@ class EngineRepo:
             )
 
         await obj.delete()
+
+        objs = await AIModelForEngine.filter(engine_id=id)
+
+        for obj in objs:
+            await obj.delete()
 
     async def is_used_by_generator(self, id: int) -> bool:
         return await Generator.exists(engine_id=id)
@@ -43,28 +46,28 @@ class EngineRepo:
         input.id = e.id
         _ = await AIModelForEngine.create(
             engine_id=e.id,
-            model_id=input.checkpoint_model.id,
+            aimodel_id=input.checkpoint_model.id,
             model_type=AIModelType.CHECKPOINT,
         )
 
         if input.vae_model:
             _ = await AIModelForEngine.create(
                 engine_id=e.id,
-                model_id=input.vae_model.id,
+                aimodel_id=input.vae_model.id,
                 model_type=AIModelType.VAE,
             )
 
         for v in input.embedding_models:
             _ = await AIModelForEngine.create(
                 engine_id=e.id,
-                model_id=v.id,
+                aimodel_id=v.id,
                 model_type=AIModelType.EMBEDDING,
             )
 
         for v in input.lora_models:
             _ = await AIModelForEngine.create(
                 engine_id=e.id,
-                model_id=v.aimodel.id,
+                aimodel_id=v.aimodel.id,
                 weight=v.weight,
                 model_type=AIModelType.LORA,
             )
@@ -72,7 +75,7 @@ class EngineRepo:
         for v in input.control_net_models:
             _ = await AIModelForEngine.create(
                 engine_id=e.id,
-                model_id=v.id,
+                aimodel_id=v.id,
                 model_type=AIModelType.CONTROLNET,
             )
 
@@ -109,7 +112,7 @@ async def serialize_engine(e: Engine) -> EngineSchema:
     embedding_models = []
     controlnet_models = []
     for v in aoes:
-        match v.aimodel_type:
+        match v.model_type:
             case AIModelType.CHECKPOINT:
                 checkpoint = await AIModel.get_or_none(id=v.id)
                 if checkpoint:

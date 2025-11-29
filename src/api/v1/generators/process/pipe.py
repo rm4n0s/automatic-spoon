@@ -93,6 +93,8 @@ def create_vae(vae: AIModelSchema) -> AutoencoderKL:
                 variant=variant,
             )
         case PathType.HUGGING_FACE:
+            if variant in vae.path:
+                variant = None
             return AutoencoderKL.from_pretrained(
                 vae.path,
                 torch_dtype=torch_dtype,
@@ -317,16 +319,14 @@ class PromptEmbeds:
 
 def enable_long_prompt(
     pipe, prompt: str, negative_prompt: str, engine: EngineSchema
-) -> PromptEmbeds | None:
-    if engine.long_prompt_technique is None:
-        return None
-
+) -> PromptEmbeds:
     emb = PromptEmbeds(
         prompt_embeds=None,
         prompt_neg_embeds=None,
         pooled_prompt_embeds=None,
         negative_pooled_prompt_embeds=None,
     )
+    assert engine.long_prompt_technique is not None
     match engine.long_prompt_technique:
         case LongPromptTechnique.COMPEL:
             if engine.checkpoint_model.model_base == AIModelBase.SDXL:
@@ -377,15 +377,21 @@ def run_pipe(pipe, engine: EngineSchema, img_sch: ImageSchema):  # pyright: igno
 
     prompt = img_sch.prompt
     negative_prompt = img_sch.negative_prompt
-
-    conditioning_images, controlnet_conditioning_scale = prepare_pose_images(
-        engine, img_sch
-    )
-
-    prompt_embeddings = enable_long_prompt(pipe, prompt, negative_prompt, engine)
     kwargs = {}
 
-    if prompt_embeddings is not None:
+    if len(img_sch.control_images) > 0:
+        conditioning_images, controlnet_conditioning_scale = prepare_pose_images(
+            engine, img_sch
+        )
+
+        kwargs["image"] = conditioning_images
+        kwargs["controlnet_conditioning_scale"] = controlnet_conditioning_scale
+        kwargs["control_guidance_start"] = control_guidance_start
+        kwargs["control_guidance_end"] = control_guidance_end
+
+    if engine.long_prompt_technique is not None:
+        prompt_embeddings = enable_long_prompt(pipe, prompt, negative_prompt, engine)
+
         kwargs["prompt_embeds"] = prompt_embeddings.prompt_embeds
         kwargs["prompt_neg_embeds"] = prompt_embeddings.prompt_neg_embeds
         kwargs["pooled_prompt_embeds"] = prompt_embeddings.pooled_prompt_embeds
@@ -404,11 +410,7 @@ def run_pipe(pipe, engine: EngineSchema, img_sch: ImageSchema):  # pyright: igno
     kwargs["guidance_scale"] = guidance_scale
     kwargs["num_inference_steps"] = num_inference_steps
 
-    if conditioning_images is not None:
-        kwargs["image"] = conditioning_images
-        kwargs["controlnet_conditioning_scale"] = controlnet_conditioning_scale
-        kwargs["control_guidance_start"] = control_guidance_start
-        kwargs["control_guidance_end"] = control_guidance_end
+    print(kwargs)
 
     image = pipe(**kwargs).images[0]
     print(f"saved image to {img_sch.file_path}")

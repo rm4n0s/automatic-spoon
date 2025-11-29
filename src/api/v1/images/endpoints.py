@@ -10,7 +10,7 @@ from .schemas import ImageSchema
 router = APIRouter()
 
 
-@router.get("/", response_model=list[ImageSchema])
+@router.get("", response_model=list[ImageSchema])
 @inject
 async def get_images(repo: FromDishka[ImageRepo]):
     return await repo.get_all()

@@ -9,7 +9,7 @@ from .user_inputs import EngineUserInput
 router = APIRouter()
 
 
-@router.get("/", response_model=list[EngineSchema])
+@router.get("", response_model=list[EngineSchema])
 @inject
 async def get_engines(repo: FromDishka[EngineRepo]):
     return await repo.get_all()
@@ -21,12 +21,13 @@ async def get_one_engine(id: int, repo: FromDishka[EngineRepo]):
     return await repo.get_one(id)
 
 
-@router.post("/", response_model=EngineSchema, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=EngineSchema, status_code=status.HTTP_201_CREATED)
 @inject
 async def create_engine(
     payload: EngineUserInput,
     svc: FromDishka[EngineService],
 ):
+    print("payload", payload)
     return await svc.create(payload)
 
 

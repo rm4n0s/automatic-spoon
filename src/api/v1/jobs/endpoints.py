@@ -11,18 +11,24 @@ from .user_inputs import JobUserInput
 router = APIRouter()
 
 
-@router.get("/", response_model=list[JobSchema])
+@router.get("", response_model=list[JobSchema])
 @inject
 async def get_jobs(repo: FromDishka[JobRepo]):
     return await repo.get_all()
 
 
-@router.post("/", response_model=JobSchema, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=JobSchema, status_code=status.HTTP_201_CREATED)
 @inject
 async def add_job(
     payload: JobUserInput, svc: FromDishka[JobService], config: FromDishka[Config]
 ):
     return await svc.create_job(config, payload)
+
+
+@router.get("/{id}", response_model=JobSchema)
+@inject
+async def get_job(id: int, repo: FromDishka[JobRepo]):
+    return await repo.get_one(id)
 
 
 @router.delete("/{id}", response_model=None, status_code=status.HTTP_204_NO_CONTENT)

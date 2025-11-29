@@ -91,4 +91,5 @@ class EngineService:
                 f"Engine with {id} can't be deleted because it is used by a generator",
                 metadata={"status_code": 400},
             )
+
         await self.engine_repo.delete(id)

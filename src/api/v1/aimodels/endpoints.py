@@ -9,7 +9,7 @@ from .user_inputs import AIModelUserInput
 router = APIRouter()
 
 
-@router.get("/", response_model=list[AIModelSchema])
+@router.get("", response_model=list[AIModelSchema])
 @inject
 async def get_aimodels(repo: FromDishka[AIModelRepo]):
     return await repo.get_all()
@@ -21,7 +21,7 @@ async def get_one_aimodel(id: int, repo: FromDishka[AIModelRepo]):
     return await repo.get_one(id)
 
 
-@router.post("/", response_model=AIModelSchema, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=AIModelSchema, status_code=status.HTTP_201_CREATED)
 @inject
 async def create_aimodel(
     payload: AIModelUserInput,
