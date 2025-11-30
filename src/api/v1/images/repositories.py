@@ -29,6 +29,21 @@ class ImageRepo:
         cnis = await ControlNetImage.filter(image_id=img.id)
         return await serialize_image(img, cnis)
 
+    async def update_ready(self, id: int, ready: bool) -> ImageSchema:
+        img = await Image.get_or_none(id=id)
+        if not img:
+            raise TSTError(
+                "image-is-not-found",
+                f"Image with ID {id} not found",
+                metadata={"status_code": 404},
+            )
+
+        img.ready = ready
+        await img.save()
+
+        cnis = await ControlNetImage.filter(image_id=img.id)
+        return await serialize_image(img, cnis)
+
 
 async def serialize_image(img_db: Image, cni_dbs: list[ControlNetImage]) -> ImageSchema:
     img_sch = ImageSchema(

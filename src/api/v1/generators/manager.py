@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from multiprocessing.queues import Queue
 from threading import Lock, Thread
 
+from src.api.v1.images.repositories import ImageRepo
 from src.api.v1.jobs.repositories import JobRepo
 from src.core.enums import (
     GeneratorCommandType,
@@ -14,7 +15,7 @@ from src.core.enums import (
 )
 
 from .process.generator import start_generator
-from .process.types import GeneratorCommand, GeneratorResult, JobFinished
+from .process.types import GeneratorCommand, GeneratorResult, ImageFinished, JobFinished
 from .repositories import GeneratorRepo
 from .schemas import GeneratorSchema
 
@@ -51,10 +52,14 @@ class ProcessManager:
     _signal_listener_thread: Thread
     _generator_repo: GeneratorRepo
     _job_repo: JobRepo
+    _image_repo: ImageRepo
 
-    def __init__(self, generator_repo: GeneratorRepo, job_repo: JobRepo):
+    def __init__(
+        self, generator_repo: GeneratorRepo, job_repo: JobRepo, image_repo: ImageRepo
+    ):
         self._generator_repo = generator_repo
         self._job_repo = job_repo
+        self._image_repo = image_repo
         self._procs = {}
         self._lock = Lock()
         self._result_queue = multiprocessing.Queue()
@@ -82,6 +87,9 @@ class ProcessManager:
                 case GeneratorResultType.JOB_FINISHED:
                     assert isinstance(res.value, JobFinished)
                     asyncio.run(self.on_job_finished(res.generator_id, res.value))
+                case GeneratorResultType.IMAGE_FINISHED:
+                    assert isinstance(res.value, ImageFinished)
+                    asyncio.run(self.on_image_finished(res.generator_id, res.value))
                 case GeneratorResultType.READY:
                     asyncio.run(self.on_ready(res.generator_id))
                 case GeneratorResultType.CLOSED:
@@ -97,16 +105,18 @@ class ProcessManager:
                     if isinstance(job_id, int):
                         asyncio.run(self.on_new_job(job_id))
 
+    async def on_image_finished(self, generator_id: int, img_finished: ImageFinished):
+        print(f"Image finished {img_finished.image_id}")
+        _ = await self._image_repo.update_ready(img_finished.image_id, True)
+
     async def on_new_job(self, job_id: int):
         print(f"New Job with ID {job_id} created")
         job = await self._job_repo.get_or_none(id=job_id)
         if job is None:
             return
 
-        print(job.__dict__)
         if job.generator_id in self._procs.keys():
             proc = self._procs[job.generator_id]
-            print(proc.status)
             if proc.status == GeneratorStatus.READY:
                 proc.commands_queue.put(
                     GeneratorCommand(command=GeneratorCommandType.JOB, value=job)
@@ -133,6 +143,7 @@ class ProcessManager:
         )
 
     async def on_ready(self, generator_id: int):
+        print(f"on ready generator {generator_id}")
         with self._lock:
             self._procs[generator_id].status = GeneratorStatus.READY
 
@@ -141,7 +152,7 @@ class ProcessManager:
         )
 
     async def on_closed(self, generator_id: int):
-        print("on generator closed")
+        print(f"on generator closed {generator_id}")
         with self._lock:
             del self._procs[generator_id]
 

@@ -1,6 +1,8 @@
-from pytsterrors import TSTError
+from typing import Any
 
-from src.core.enums import AIModelType
+from pytsterrors import TSTError
+from tortoise.expressions import Q
+
 from src.db.models import AIModel, AIModelForEngine
 
 from .schemas import AIModelSchema
@@ -41,8 +43,8 @@ class AIModelRepo:
         obj = await AIModel.get_or_none(id=id)
         return AIModelSchema.model_validate(obj) if obj else None
 
-    async def exists(self, id: int, model_type: AIModelType) -> bool:
-        return await AIModel.exists(id=id, model_type=model_type)
+    async def exists(self, *args: Q, **kwargs: Any) -> bool:
+        return await AIModel.exists(*args, **kwargs)
 
     async def is_used_by_engine(self, id: int) -> bool:
         return await AIModelForEngine.exists(aimodel_id=id)

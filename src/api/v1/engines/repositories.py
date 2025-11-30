@@ -1,4 +1,7 @@
+from typing import Any
+
 from pytsterrors import TSTError
+from tortoise.expressions import Q
 
 from src.api.v1.aimodels.schemas import AIModelSchema
 from src.core.enums import AIModelType
@@ -99,8 +102,8 @@ class EngineRepo:
 
         return await serialize_engine(e)
 
-    async def exists(self, id: int) -> bool:
-        return await Engine.exists(id=id)
+    async def exists(self, *args: Q, **kwargs: Any) -> bool:
+        return await Engine.exists(*args, **kwargs)
 
 
 async def serialize_engine(e: Engine) -> EngineSchema:

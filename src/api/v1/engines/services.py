@@ -18,6 +18,14 @@ class EngineService:
 
     async def _validate(self, input: EngineUserInput) -> list[dict[str, str]]:
         res = []
+        if input.name == "":
+            res.append(
+                {
+                    "field": "name",
+                    "error": "name can't be empty",
+                }
+            )
+
         ok = await self.aimodel_repo.exists(
             id=input.checkpoint_model_id, model_type=AIModelType.CHECKPOINT
         )

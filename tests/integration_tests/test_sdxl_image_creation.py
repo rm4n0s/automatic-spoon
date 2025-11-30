@@ -6,6 +6,7 @@ from automatic_spoon_client_sync import (
     AIModelCaller,
     AIModelType,
     AIModelUserInput,
+    CreationError,
     EngineCaller,
     EngineUserInput,
     GeneratorCaller,
@@ -42,7 +43,8 @@ def test_sdxl_image_creation():
     ls = aimodel_caller.get_list_aimodels()
     assert len(ls) == 0
     assert cfg.checkpoint_sdxl.file_path is not None
-    assert cfg.vae_sdxl.file_path is not None
+    assert cfg.vae_sdxl.hugging_face is not None
+
     aimodel_input = AIModelUserInput(
         name="new model",
         path=cfg.checkpoint_sdxl.file_path,
@@ -54,14 +56,13 @@ def test_sdxl_image_creation():
     )
 
     checkpoint_model = aimodel_caller.create_aimodel(aimodel_input)
-
     assert checkpoint_model.name == aimodel_input.name
     assert checkpoint_model.id is not None
 
     aimodel_input = AIModelUserInput(
         name="vae model",
-        path=cfg.vae_sdxl.file_path,
-        path_type=PathType.FILE,
+        path=cfg.vae_sdxl.hugging_face,
+        path_type=PathType.HUGGING_FACE,
         variant=Variant.FP16,
         model_type=AIModelType.VAE,
         model_base=AIModelBase.SDXL,
@@ -96,7 +97,7 @@ def test_sdxl_image_creation():
     assert gen.id is not None
     assert gen.status == GeneratorStatus.STARTING
 
-    time.sleep(15)
+    time.sleep(20)
 
     gen = generator_caller.get_generator(gen.id)
     assert gen.id is not None
@@ -122,6 +123,7 @@ def test_sdxl_image_creation():
     img = img_caller.get_image(job.images[0].id)
     assert img.id is not None
     assert img.prompt == prompt
+    assert img.ready
 
     img_path = "/tmp/test_sdxl_image_creation.png"
     img_caller.download_image(img.id, img_path)
