@@ -80,6 +80,7 @@ class AIModelService:
             variant=input.variant,
             model_type=input.model_type,
             model_base=input.model_base,
+            control_net_type=input.control_net_type,
             tags=input.tags,
             trigger_pos_words=input.trigger_pos_words,
             trigger_neg_words=input.trigger_neg_words,

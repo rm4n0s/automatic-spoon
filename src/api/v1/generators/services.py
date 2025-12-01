@@ -62,7 +62,7 @@ class GeneratorService:
         return gs
 
     async def start_generator(self, id: int) -> GeneratorSchema:
-        if not await self.generator_repo.exists(id):
+        if not await self.generator_repo.exists(id=id):
             raise TSTError(
                 "generator-not-found",
                 f"Generator with ID {id} not found",
@@ -74,7 +74,7 @@ class GeneratorService:
         return gen
 
     async def close_generator(self, id: int) -> GeneratorSchema:
-        if not await self.generator_repo.exists(id):
+        if not await self.generator_repo.exists(id=id):
             raise TSTError(
                 "generator-not-found",
                 f"Generator with ID {id} not found",

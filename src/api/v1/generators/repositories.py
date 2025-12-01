@@ -1,4 +1,7 @@
+from typing import Any
+
 from pytsterrors import TSTError
+from tortoise.expressions import Q
 
 from src.api.v1.engines.repositories import serialize_engine
 from src.core.enums import GeneratorStatus
@@ -62,8 +65,8 @@ class GeneratorRepo:
             )
         await g.delete()
 
-    async def exists(self, id: int) -> bool:
-        return await Generator.exists(id=id)
+    async def exists(self, *args: Q, **kwargs: Any) -> bool:
+        return await Generator.exists(*args, **kwargs)
 
 
 async def serialize_generator(g: Generator) -> GeneratorSchema:

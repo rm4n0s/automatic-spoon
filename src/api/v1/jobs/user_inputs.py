@@ -8,7 +8,7 @@ class ControlNetImageInput(BaseModel):
         int | None
     )  # if none is image reference to be used from engine's controlnets
     data_base64: str
-    controlnet_conditioning_scale: float
+    controlnet_conditioning_scale: float | None
     canny_low_threshold: int | None = None
     canny_high_threshold: int | None = None
 

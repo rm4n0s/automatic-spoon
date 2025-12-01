@@ -13,8 +13,13 @@ from src.core.enums import ControlNetType
 
 def poses_from_reference_image(engine: EngineSchema, ci: ControlNetImageSchema):
     reference_pose_image = load_image(ci.image_file_path)
-    controlnet_conditioning_scale = []
+    controlnet_conditioning_scales = []
     conditioning_images = []
+    scale = engine.controlnet_conditioning_scale
+    if ci.controlnet_conditioning_scale:
+        scale = ci.controlnet_conditioning_scale
+
+    assert scale is not None
     for pose_model in engine.control_net_models:
         if pose_model.control_net_type is None:
             raise TSTError(
@@ -29,17 +34,17 @@ def poses_from_reference_image(engine: EngineSchema, ci: ControlNetImageSchema):
                     reference_pose_image, include_hand=True, include_face=True
                 )
                 conditioning_images.append(pose_image)
-                controlnet_conditioning_scale.append(ci.controlnet_conditioning_scale)
+                controlnet_conditioning_scales.append(scale)
             case ControlNetType.MIDAS:
                 midas = MidasDetector.from_pretrained("lllyasviel/Annotators")
                 depth_image = midas(reference_pose_image)
                 conditioning_images.append(depth_image)
-                controlnet_conditioning_scale.append(ci.controlnet_conditioning_scale)
+                controlnet_conditioning_scales.append(scale)
 
             case ControlNetType.MEDIAPIPE:
                 pose_image = get_mediapipe_pose(ci.image_file_path)
                 conditioning_images.append(pose_image)
-                controlnet_conditioning_scale.append(ci.controlnet_conditioning_scale)
+                controlnet_conditioning_scales.append(scale)
             case ControlNetType.CANNY:
                 canny_detector = CannyDetector()
                 assert ci.canny_low_threshold is not None
@@ -51,9 +56,9 @@ def poses_from_reference_image(engine: EngineSchema, ci: ControlNetImageSchema):
                     high_threshold=ci.canny_high_threshold,
                 )
                 conditioning_images.append(pose_image)
-                controlnet_conditioning_scale.append(ci.controlnet_conditioning_scale)
+                controlnet_conditioning_scales.append(scale)
 
-    return conditioning_images, controlnet_conditioning_scale
+    return conditioning_images, controlnet_conditioning_scales
 
 
 def prepare_pose_images(engine: EngineSchema, img_sch: ImageSchema):

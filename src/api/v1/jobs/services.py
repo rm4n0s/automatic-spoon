@@ -1,6 +1,7 @@
 from pytsterrors import TSTError
 
 from src.api.v1.generators.manager import ProcessManager
+from src.api.v1.generators.repositories import GeneratorRepo
 from src.api.v1.jobs.schemas import JobSchema
 from src.api.v1.jobs.user_inputs import JobUserInput
 from src.core.config import Config
@@ -11,11 +12,28 @@ from .repositories import JobRepo
 
 class JobService:
     job_repo: JobRepo
+    generator_repo: GeneratorRepo
     manager: ProcessManager
 
-    def __init__(self, job_repo: JobRepo, manager: ProcessManager):
+    def __init__(
+        self, generator_repo: GeneratorRepo, job_repo: JobRepo, manager: ProcessManager
+    ):
         self.job_repo = job_repo
+        self.generator_repo = generator_repo
         self.manager = manager
+
+    async def _validate(self, input: JobUserInput) -> list[dict[str, str]]:
+        res = []
+        ok = await self.generator_repo.exists(id=input.generator_id)
+        if not ok:
+            res.append(
+                {
+                    "field": "generator_id",
+                    "error": f"generator with id {input.generator_id} doesn't exist",
+                }
+            )
+
+        return res
 
     async def create_job(self, config: Config, input: JobUserInput) -> JobSchema:
         job = await self.job_repo.create(config.images_path, input)

@@ -13,9 +13,12 @@ class GPUService:
         gpus: list[GPUSchema] = []
         for i in range(num_gpus):
             device_name = torch.cuda.get_device_name(i)
-            # Convert bytes to GB
             total_vram = torch.cuda.get_device_properties(i).total_memory / (1024**3)
-            gpu = GPUSchema(id=i, name=device_name, total_vram_gb=total_vram)
+            gpu = GPUSchema(
+                id=i,
+                name=device_name,
+                total_vram_gb=total_vram,
+            )
             gpus.append(gpu)
 
         return gpus

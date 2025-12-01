@@ -156,7 +156,6 @@ def create_pipe(
 
 def load_loras(pipe: DiffusionPipeline, loras: list[LoraAndWeight]):
     for lora in loras:
-        print(lora)
         lora_path = lora.aimodel.path  # Replace or comment out
         lora_weight = lora.weight
         if lora_path:
@@ -409,8 +408,6 @@ def run_pipe(pipe, engine: EngineSchema, img_sch: ImageSchema):  # pyright: igno
     kwargs["width"] = width
     kwargs["guidance_scale"] = guidance_scale
     kwargs["num_inference_steps"] = num_inference_steps
-
-    print(kwargs)
 
     image = pipe(**kwargs).images[0]
     print(f"saved image to {img_sch.file_path}")

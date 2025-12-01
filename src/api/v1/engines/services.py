@@ -32,10 +32,80 @@ class EngineService:
         if not ok:
             res.append(
                 {
-                    "field": "checkpoint_id",
-                    "error": f"the ID {input.checkpoint_model_id} doesn't exit in aimodels",
+                    "field": "checkpoint_model_id",
+                    "error": f"checkpoint model with id {input.checkpoint_model_id} doesn't exist",
                 }
             )
+
+        if input.vae_model_id:
+            ok = await self.aimodel_repo.exists(
+                id=input.vae_model_id, model_type=AIModelType.VAE
+            )
+            if not ok:
+                res.append(
+                    {
+                        "field": "vae_model_id",
+                        "error": f"VAE model with id {input.vae_model_id} doesn't exist",
+                    }
+                )
+
+        for lw in input.lora_model_ids:
+            id = lw.lora_id
+            ok = await self.aimodel_repo.exists(id=id, model_type=AIModelType.LORA)
+            if not ok:
+                res.append(
+                    {
+                        "field": "lora_model_ids",
+                        "error": f"LORA model with id {id} doesn't exist",
+                    }
+                )
+
+        for id in input.conrol_net_model_ids:
+            ok = await self.aimodel_repo.exists(
+                id=id, model_type=AIModelType.CONTROLNET
+            )
+            if not ok:
+                res.append(
+                    {
+                        "field": "conrol_net_model_ids",
+                        "error": f"control net model with id {id} doesn't exist",
+                    }
+                )
+
+        if len(input.conrol_net_model_ids) > 0:
+            if input.controlnet_conditioning_scale is None:
+                res.append(
+                    {
+                        "field": "controlnet_conditioning_scale",
+                        "error": "control net scale can't be empty when control_net_model_ids is not",
+                    }
+                )
+
+            if input.control_guidance_start is None:
+                res.append(
+                    {
+                        "field": "control_guidance_start",
+                        "error": "control guidance start can't be empty when control_net_model_ids is not",
+                    }
+                )
+
+            if input.control_guidance_end is None:
+                res.append(
+                    {
+                        "field": "control_guidance_end",
+                        "error": "control guidance end can't be empty when control_net_model_ids is not",
+                    }
+                )
+
+        for id in input.embedding_model_ids:
+            ok = await self.aimodel_repo.exists(id=id, model_type=AIModelType.EMBEDDING)
+            if not ok:
+                res.append(
+                    {
+                        "field": "embedding_model_ids",
+                        "error": f"embedding model with id {id} doesn't exist",
+                    }
+                )
 
         return res
 

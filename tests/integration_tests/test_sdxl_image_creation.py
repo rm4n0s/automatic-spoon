@@ -6,7 +6,6 @@ from automatic_spoon_client_sync import (
     AIModelCaller,
     AIModelType,
     AIModelUserInput,
-    CreationError,
     EngineCaller,
     EngineUserInput,
     GeneratorCaller,
