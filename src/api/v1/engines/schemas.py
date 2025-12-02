@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from src.api.v1.aimodels.schemas import AIModelSchema
@@ -30,6 +32,8 @@ class EngineSchema(BaseModel):
     steps: int
     pipe_type: PipeType
     long_prompt_technique: LongPromptTechnique | None = None
+    scaling_factor_enabled: bool | None = None
+    scheduler_config: dict[str, Any] | None = None
     vae_model: AIModelSchema | None = None
     controlnet_conditioning_scale: float | None = None
     control_guidance_start: float | None = None

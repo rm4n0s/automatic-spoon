@@ -21,6 +21,7 @@ class TestConfig(DataClassYAMLMixin):
     vae_sdxl: ModelPath
     checkpoint_sd: ModelPath
     checkpoint_sdxl: ModelPath
+    checkpoint_v_pred_sdxl: ModelPath
     openpose_sd: ModelPath
     openpose_sdxl: ModelPath
     mediapipe_sd: ModelPath

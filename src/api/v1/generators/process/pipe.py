@@ -238,74 +238,67 @@ def load_embeddings(pipe: DiffusionPipeline, embeddings: list[AIModelSchema]):
             pipe.load_textual_inversion(embed.path, token=trigger)
 
 
-def set_scheduler(pipe: DiffusionPipeline, scheduler_enum: Scheduler):
+def set_scheduler(
+    pipe: DiffusionPipeline, scheduler_enum: Scheduler, scheduler_config: dict[str, Any]
+):
     match scheduler_enum:
         case Scheduler.EULERA:
             pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(
-                pipe.scheduler.config
+                pipe.scheduler.config, **scheduler_config
             )
         case Scheduler.EULER:
-            pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config)
+            pipe.scheduler = EulerDiscreteScheduler.from_config(
+                pipe.scheduler.config, **scheduler_config
+            )
         case Scheduler.LMS:
-            pipe.scheduler = LMSDiscreteScheduler.from_config(pipe.scheduler.config)
+            pipe.scheduler = LMSDiscreteScheduler.from_config(
+                pipe.scheduler.config, **scheduler_config
+            )
         case Scheduler.HEUN:
-            pipe.scheduler = HeunDiscreteScheduler.from_config(pipe.scheduler.config)
+            pipe.scheduler = HeunDiscreteScheduler.from_config(
+                pipe.scheduler.config, **scheduler_config
+            )
         case Scheduler.DPM2:
-            pipe.scheduler = KDPM2DiscreteScheduler.from_config(pipe.scheduler.config)
+            pipe.scheduler = KDPM2DiscreteScheduler.from_config(
+                pipe.scheduler.config, **scheduler_config
+            )
         case Scheduler.DPM2A:
             pipe.scheduler = KDPM2AncestralDiscreteScheduler.from_config(
-                pipe.scheduler.config
+                pipe.scheduler.config, **scheduler_config
             )
         case Scheduler.DPM2SA:
             pipe.scheduler = DPMSolverSinglestepScheduler.from_config(
-                pipe.scheduler.config
+                pipe.scheduler.config, **scheduler_config
             )
+
         case Scheduler.DPM2M:
             pipe.scheduler = DPMSolverMultistepScheduler.from_config(
-                pipe.scheduler.config
-            )
-        case Scheduler.DPMSDE:
-            pipe.scheduler = DPMSolverSinglestepScheduler.from_config(
-                pipe.scheduler.config, algorithm_type="sde-dpmsolver++"
-            )
-        case Scheduler.LMSKARRAS:
-            pipe.scheduler = LMSDiscreteScheduler.from_config(
-                pipe.scheduler.config, use_karras_sigmas=True
-            )
-        case Scheduler.DPM2KARRAS:
-            pipe.scheduler = KDPM2DiscreteScheduler.from_config(
-                pipe.scheduler.config, use_karras_sigmas=True
-            )
-        case Scheduler.DPM2AKARRAS:
-            pipe.scheduler = KDPM2AncestralDiscreteScheduler.from_config(
-                pipe.scheduler.config, use_karras_sigmas=True
-            )
-        case Scheduler.DPM2SAKARRAS:
-            pipe.scheduler = DPMSolverSinglestepScheduler.from_config(
-                pipe.scheduler.config, use_karras_sigmas=True
-            )
-        case Scheduler.DPM2MKARRAS:
-            pipe.scheduler = DPMSolverMultistepScheduler.from_config(
-                pipe.scheduler.config, use_karras_sigmas=True
-            )
-        case Scheduler.DPMSDEKARRAS:
-            pipe.scheduler = DPMSolverSinglestepScheduler.from_config(
-                pipe.scheduler.config,
-                use_karras_sigmas=True,
-                algorithm_type="sde-dpmsolver++",
+                pipe.scheduler.config, **scheduler_config
             )
         case Scheduler.DDIM:
-            pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config)
+            pipe.scheduler = DDIMScheduler.from_config(
+                pipe.scheduler.config, **scheduler_config
+            )
         case Scheduler.PLMS:
-            pipe.scheduler = PNDMScheduler.from_config(pipe.scheduler.config)
+            pipe.scheduler = PNDMScheduler.from_config(
+                pipe.scheduler.config, **scheduler_config
+            )
         case Scheduler.UNIPC:
-            pipe.scheduler = UniPCMultistepScheduler.from_config(pipe.scheduler.config)
+            pipe.scheduler = UniPCMultistepScheduler.from_config(
+                pipe.scheduler.config, **scheduler_config
+            )
         case Scheduler.LCM:
-            pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config)
+            pipe.scheduler = LCMScheduler.from_config(
+                pipe.scheduler.config, **scheduler_config
+            )
         case Scheduler.DDPM:
-            pipe.scheduler = DDPMScheduler.from_config(pipe.scheduler.config)
+            pipe.scheduler = DDPMScheduler.from_config(
+                pipe.scheduler.config, **scheduler_config
+            )
         case Scheduler.DEIS:
-            pipe.scheduler = DEISMultistepScheduler.from_config(pipe.scheduler.config)
+            pipe.scheduler = DEISMultistepScheduler.from_config(
+                pipe.scheduler.config, **scheduler_config
+            )
 
 
 @dataclass

@@ -57,15 +57,6 @@ class Scheduler(enum.StrEnum):
     DPM2A = "dpm2a"
     DPM2SA = "dpm2sa"
     DPM2M = "dpm2m"
-    DPMSDE = "dpmsde"
-    # DPMFAST = "dpmfast" # from k_diffusion
-    # DPMADAPTIVE = "dpmadaptive" # from k_diffusion
-    LMSKARRAS = "lmskarras"
-    DPM2KARRAS = "dpm2karras"
-    DPM2AKARRAS = "dpm2akarras"
-    DPM2SAKARRAS = "dpm2sakarras"
-    DPM2MKARRAS = "dpm2mkarras"
-    DPMSDEKARRAS = "dpmsdekarras"
     DDIM = "ddim"
     PLMS = "plms"
     UNIPC = "unipc"

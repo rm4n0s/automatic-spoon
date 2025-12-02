@@ -18,6 +18,10 @@ checkpoint_sdxl:
   file_path: "file path of .safetensors"
   hugging_face: "the repo id of a .safetensors"
 
+checkpoint_v_pred_sdxl:
+  file_path: "file path of .safetensors"
+  hugging_face: "the repo id of a .safetensors"
+
 openpose_sd:
   file_path: "file path of .safetensors"
   hugging_face: "for ex lllyasviel/control_v11p_sd15_openpose"

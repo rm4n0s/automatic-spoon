@@ -17,6 +17,8 @@ class Engine(TimestampMixin, Model):
         enum_type=LongPromptTechnique, null=True
     )
     scheduler = fields.CharEnumField(enum_type=Scheduler)
+    scaling_factor_enabled = fields.BooleanField(null=True)
+    scheduler_config = fields.JSONField(null=True)
     guidance_scale = fields.FloatField()
     seed = fields.IntField()
     width = fields.IntField()

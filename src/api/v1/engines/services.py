@@ -50,7 +50,7 @@ class EngineService:
                 )
 
         for lw in input.lora_model_ids:
-            id = lw.lora_id
+            id = lw.lora_model_id
             ok = await self.aimodel_repo.exists(id=id, model_type=AIModelType.LORA)
             if not ok:
                 res.append(
@@ -135,7 +135,7 @@ class EngineService:
 
         loras = []
         for v in input.lora_model_ids:
-            aimodel = await self.aimodel_repo.get_one(v.lora_id)
+            aimodel = await self.aimodel_repo.get_one(v.lora_model_id)
             lora = LoraAndWeight(aimodel=aimodel, weight=v.weight)
             loras.append(lora)
 
@@ -154,6 +154,8 @@ class EngineService:
             height=input.height,
             pipe_type=input.pipe_type,
             long_prompt_technique=input.long_prompt_technique,
+            scaling_factor_enabled=input.scaling_factor_enabled,
+            scheduler_config=input.scheduler_config,
             controlnet_conditioning_scale=input.controlnet_conditioning_scale,
             control_guidance_start=input.control_guidance_start,
             control_guidance_end=input.control_guidance_end,

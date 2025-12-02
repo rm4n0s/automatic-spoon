@@ -63,13 +63,26 @@ class GeneratorProcess:
                 pipe.text_encoder.text_model.encoder.layers[: -(clip_skip - 1)]
             )
 
+        if self._engine.scaling_factor_enabled is not None and vae is not None:
+            if self._engine.scaling_factor_enabled:
+                pipe.vae.config.scaling_factor = torch.tensor(
+                    pipe.vae.config.scaling_factor,
+                    dtype=pipe.vae.dtype,
+                    device=pipe.device,
+                )
+
         if len(self._engine.lora_models) > 0:
             load_loras(pipe, self._engine.lora_models)
 
         if len(self._engine.embedding_models) > 0:
             load_embeddings(pipe, self._engine.embedding_models)
 
-        set_scheduler(pipe, self._engine.scheduler)
+        scheduler_config = {}
+        if self._engine.scheduler_config is not None:
+            scheduler_config = self._engine.scheduler_config
+
+        print(self._engine.scheduler, scheduler_config)
+        set_scheduler(pipe, self._engine.scheduler, scheduler_config)
         pipe = pipe.to("cuda:" + str(self._gpu_id))
         pipe.safety_checker = None
         return pipe
