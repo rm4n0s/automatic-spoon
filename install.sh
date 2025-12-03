@@ -7,8 +7,6 @@ pip install pytest==8.4.2 \
             pytest-asyncio==1.2.0 \
             httpx==0.28.1
 
-# Install dependencies for CLI
-pip install click==8.3.0
 
 # Install dependencies for REST API and UI
 pip install nicegui==3.1.0 \

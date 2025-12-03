@@ -1,6 +1,5 @@
 import argparse
 import os
-import typing
 from contextlib import asynccontextmanager
 
 import uvicorn
@@ -74,18 +73,10 @@ def main():
         epilog="Text at the bottom of help",
     )
 
-    _ = parser.add_argument("--port", default=8080, help="the port")
-    _ = parser.add_argument("--host", default="localhost", help="the host")
+    _ = parser.add_argument("--port", type=int, default=8080, help="the port")
+    _ = parser.add_argument("--host", type=str, default="localhost", help="the host")
     _ = parser.add_argument(
         "--config", default="config.yaml", help="the configuration file"
-    )
-    _ = parser.add_argument(
-        "--reload", default=False, help="reload server after source code change"
-    )
-    _ = parser.add_argument(
-        "--reload-dirs",
-        default="./src",
-        help="reload server after changes in specific folder",
     )
     args = parser.parse_args()
     config_path = args.config
@@ -101,7 +92,6 @@ def main():
         app,
         host=args.host,
         port=args.port,
-        reload=args.reload,
-        reload_dirs=args.reload_dirs,
+        reload=False,
         workers=1,
     )
