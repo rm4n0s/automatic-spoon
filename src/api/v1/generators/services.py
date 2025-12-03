@@ -30,8 +30,15 @@ class GeneratorService:
 
     async def _validate(self, input: GeneratorUserInput) -> list[dict[str, str]]:
         res = []
-        ok = await self.engine_repo.exists(id=input.engine_id)
+        if input.name == "":
+            res.append(
+                {
+                    "field": "name",
+                    "error": "name can't be empty",
+                }
+            )
 
+        ok = await self.engine_repo.exists(id=input.engine_id)
         if not ok:
             res.append(
                 {

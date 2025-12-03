@@ -37,16 +37,16 @@ def test_sdxl_image_creation():
     info = info_caller.get_info()
     assert info.db_path == ":memory:"
 
-    cfg = read_test_config("tests/test-config.yaml")
+    test_cfg = read_test_config("tests/test-config.yaml")
 
     ls = aimodel_caller.get_list_aimodels()
     assert len(ls) == 0
-    assert cfg.checkpoint_sdxl.file_path is not None
-    assert cfg.vae_sdxl.hugging_face is not None
+    assert test_cfg.checkpoint_sdxl.file_path is not None
+    assert test_cfg.vae_sdxl.hugging_face is not None
 
     aimodel_input = AIModelUserInput(
         name="new model",
-        path=cfg.checkpoint_sdxl.file_path,
+        path=test_cfg.checkpoint_sdxl.file_path,
         path_type=PathType.FILE,
         variant=Variant.FP16,
         model_type=AIModelType.CHECKPOINT,
@@ -60,7 +60,7 @@ def test_sdxl_image_creation():
 
     aimodel_input = AIModelUserInput(
         name="vae model",
-        path=cfg.vae_sdxl.hugging_face,
+        path=test_cfg.vae_sdxl.hugging_face,
         path_type=PathType.HUGGING_FACE,
         variant=Variant.FP16,
         model_type=AIModelType.VAE,
@@ -69,6 +69,7 @@ def test_sdxl_image_creation():
     )
 
     vae_model = aimodel_caller.create_aimodel(aimodel_input)
+    assert vae_model.id
 
     engine_input = EngineUserInput(
         name="new engine",
@@ -128,10 +129,14 @@ def test_sdxl_image_creation():
     img_caller.download_image(img.id, img_path)
     assert os.path.isfile(img_path)
 
-    job_caller.delete_job(job.id)
-
     _ = generator_caller.close_generator(gen.id)
     time.sleep(10)
+    job_caller.delete_job(job.id)
+    assert not os.path.exists(img.file_path)
+    for cni in img.control_images:
+        assert not os.path.exists(cni.image_file_path)
+
     generator_caller.delete_generator(gen.id)
     engine_caller.delete_engine(engine.id)
     aimodel_caller.delete_aimodel(checkpoint_model.id)
+    aimodel_caller.delete_aimodel(vae_model.id)

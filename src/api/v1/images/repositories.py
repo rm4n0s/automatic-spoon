@@ -1,4 +1,7 @@
+from typing import Any
+
 from pytsterrors import TSTError
+from tortoise.expressions import Q
 
 from src.api.v1.aimodels.schemas import AIModelSchema
 from src.db.models import AIModel, ControlNetImage, Image
@@ -10,6 +13,15 @@ class ImageRepo:
     async def get_all(self) -> list[ImageSchema]:
         imgs = await Image.all()
 
+        list_image_schemas = []
+        for img in imgs:
+            cnis = await ControlNetImage.filter(image_id=img.id)
+            img_sch = await serialize_image(img, cnis)
+            list_image_schemas.append(img_sch)
+        return list_image_schemas
+
+    async def filter(self, *args: Q, **kwargs: Any) -> list[ImageSchema]:
+        imgs = await Image.filter(*args, **kwargs)
         list_image_schemas = []
         for img in imgs:
             cnis = await ControlNetImage.filter(image_id=img.id)

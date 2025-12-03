@@ -168,11 +168,13 @@ def test_sdxl_image_creation_with_controlnet_reference_image():
         img_path = "/tmp/test_sdxl_image_creation.png"
         img_caller.download_image(img.id, img_path)
         assert os.path.isfile(img_path)
-
-        job_caller.delete_job(job.id)
-
         _ = generator_caller.close_generator(gen.id)
         time.sleep(10)
+        job_caller.delete_job(job.id)
+        assert not os.path.exists(img.file_path)
+        for cni in img.control_images:
+            assert not os.path.exists(cni.image_file_path)
+
         generator_caller.delete_generator(gen.id)
         engine_caller.delete_engine(engine.id)
         aimodel_caller.delete_aimodel(checkpoint_model.id)
