@@ -1,3 +1,6 @@
+# Copyright © 2025-2026 Emmanouil Ragiadakos
+# SPDX-License-Identifier: SSPL-1.0
+
 from fastapi import APIRouter
 
 from .aimodels.endpoints import router as aimodels_router

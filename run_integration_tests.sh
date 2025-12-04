@@ -1,0 +1,6 @@
+pytest -s tests/integration_tests/test_sdxl_image_creation.py
+pytest -s tests/integration_tests/test_sdxl_image_reference_control_creation.py
+pytest -s tests/integration_tests/test_v_pred_sdxl_image_reference_control_creation.py
+pytest -s tests/integration_tests/validation_tests/test_aimodel_validation.py
+pytest -s tests/integration_tests/validation_tests/test_engine_validation.py
+pytest -s tests/integration_tests/validation_tests/test_job_validation.py

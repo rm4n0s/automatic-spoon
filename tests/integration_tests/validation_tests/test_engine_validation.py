@@ -1,3 +1,6 @@
+# Copyright © 2025-2026 Emmanouil Ragiadakos
+# SPDX-License-Identifier: SSPL-1.0
+
 from automatic_spoon_client_sync import (
     AIModelBase,
     AIModelCaller,

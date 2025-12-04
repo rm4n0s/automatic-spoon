@@ -1,3 +1,6 @@
+# Copyright © 2025-2026 Emmanouil Ragiadakos
+# SPDX-License-Identifier: SSPL-1.0
+
 from dishka import Provider, Scope, provide
 
 from src.api.v1.aimodels.repositories import AIModelRepo

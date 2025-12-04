@@ -1,39 +1,49 @@
 # Automatic Spoon
-A simple REST API that will create images, control poses, and remove backgrounds and keep a queue of jobs.
-
-## License
-The project has the controversial SSPLv1 license. <br/>
-It is like based on GPLv3 license with one caveat on 13th paragraph. If you use the software as a service, then publish all the scripts and source code to replicate it on another hardware. <br/>
-For more information read the 'LICENSE' file.
+Automatic Spoon is an open source REST API to start stable diffussion's image generators and send a batch of images to create.
 
 ## Installation
-With pyenv install python version 3.12.12 and then run these command lines to install dependencies
-Install first torch for your GPU or run this script but it may not install the correct torch version
-```bash
-bash install-torch.sh
+Make sure you running python 3.12. <br/>
+If you are not sure, then install python 3.12 from pyenv. <br/>
+When you have installed python 3.12, then call these command lines to create the local environment of the project <br/>
+```bash 
+python -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
 ```
-Run this command line and if it says True in the end it means that GPU will be utilized successfully 
+
+Install first torch for your GPU. <br/>
+There are two scripts, one to install torch for CUDA
+```bash
+bash install-torch-cuda.sh
+```
+and the other to install torch for AMD's GPU
+```bash
+bash install-torch-rocm.sh
+```
+After installing torch, run this command line to see if torch utilizes GPU successfully if it says True.  
 ```bash 
 python -c 'import torch; print(torch.__version__); print(torch.cuda.is_available() if torch.cuda.is_available() else "CPU only")'
 ```
 Now install the rest of dependecies
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install --upgrade pip
 bash install.sh
 ```
 
 ## Run
+To run the server call 
 ```bash
 source .venv/bin/activate
-run main.py
+python run.py --config=./config.yaml --port=8080 --host="localhost"
 ```
 
 
 ## Test
 First make sure you have created test-config.yaml inside the tests/ like in the example test-config-example.yaml <br/>
-Afte that execute
+Then call `run_unit_tests` that run each test individual because they will fail if you try to run them by calling just pytest
 ```bash
-pytest -s --log-cli-level=DEBUG
+bash run_unit_tests.sh
+```
+Then call `run_integration_tests` only if the server is running and its DB is in memory mode.
+```bash
+bash run_integration_tests.sh
 ```

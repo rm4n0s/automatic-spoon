@@ -1,5 +1,12 @@
 # Plan for 2026
 
-Add new endpoints to start generators for ADetailer and HighRes(+ upscale). These generators will be different from the current one because I don't want to complicate things.
-What I want is to start txt2img generators that will be ready to accept prompts requests and create images.
-Then later on start another generator for img2img to upscale/highres/fix that will be ready to accept images with prompts for processing.
+What I want to add in 2026:
+- new endpoints to start generators for ADetailer (for face, hands etc), HighRes and upscale. 
+- webhook for notifications
+- TTL for images and jobs
+- upload models 
+- For security
+  - HTTPS
+  - authentication
+  - encrypt models and decrypt them only when loading them on GPU
+  - encrypt images
