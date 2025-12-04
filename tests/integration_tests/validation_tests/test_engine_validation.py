@@ -9,13 +9,13 @@ from automatic_spoon_client_sync import (
     CreationError,
     EngineCaller,
     EngineUserInput,
-    LoraAndWeight,
-    LoraIDAndWeight,
+    LoraIDAndWeightInput,
     PathType,
     PipeType,
     Scheduler,
     Variant,
 )
+from pytsterrors import TSTError
 
 
 def test_engine_validate_empty_fields():
@@ -89,7 +89,7 @@ def test_engine_validate_aimodels_dont_exist():
         height=1024,
         steps=25,
         pipe_type=PipeType.TXT2IMG,
-        lora_model_ids=[LoraIDAndWeight(lora_id=1, weight=3)],
+        lora_model_ids=[LoraIDAndWeightInput(lora_model_id=1, weight=3)],
         conrol_net_model_ids=[1],
         embedding_model_ids=[1],
     )
@@ -143,5 +143,7 @@ def test_engine_validate_aimodels_dont_exist():
             and errs["control_guidance_end"]
             == "control guidance end can't be empty when control_net_model_ids is not"
         )
+    except TSTError as exc:
+        print(exc.metadata())
 
     assert threw_exception
