@@ -51,7 +51,9 @@ def generator_event_to_json(event: GeneratorEvent) -> str:
     data = asdict(event)
     # Convert value to dict if not None
     if data["value"] is not None:
-        if not isinstance(data["value"], dict):
+        if isinstance(data["value"], TSTError):
+            data["value"] = data["value"].to_dict()
+        elif not isinstance(data["value"], dict):
             data["value"] = asdict(data["value"])
     # The result is already an Enum, which will be handled by the encoder
     return json.dumps(data, cls=EnumEncoder)
