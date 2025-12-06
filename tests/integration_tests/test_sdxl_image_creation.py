@@ -24,6 +24,7 @@ from automatic_spoon_client_sync import (
     PipeType,
     Scheduler,
     Variant,
+    WebsocketCaller,
 )
 
 from src.utils import read_test_config
@@ -35,6 +36,7 @@ def test_sdxl_image_creation():
     aimodel_caller = AIModelCaller(host)
     engine_caller = EngineCaller(host)
     generator_caller = GeneratorCaller(host)
+    websocket_caller = WebsocketCaller("ws://localhost:8080")
     job_caller = JobCaller(host)
     img_caller = ImageCaller(host)
     info = info_caller.get_info()
@@ -119,7 +121,10 @@ def test_sdxl_image_creation():
     assert job.id is not None
     print(job)
 
-    time.sleep(20)
+    for event in websocket_caller.iterate_on_generator_events():
+        if event["event"] == "job_finished":
+            break
+
     job = job_caller.get_job(job.id)
     assert job.id is not None
     assert job.status == JobStatus.FINISHED
