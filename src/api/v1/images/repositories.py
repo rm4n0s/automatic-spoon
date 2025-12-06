@@ -69,6 +69,7 @@ async def serialize_image(img_db: Image, cni_dbs: list[ControlNetImage]) -> Imag
         negative_prompt=img_db.negative_prompt,
         ready=img_db.ready,
         file_path=img_db.file_path,
+        name=img_db.name,
         seed=img_db.seed,
         guidance_scale=img_db.guidance_scale,
         width=img_db.width,

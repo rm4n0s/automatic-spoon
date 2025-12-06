@@ -1,4 +1,5 @@
 db_path: ":memory:"
 #db_path: ./.private/db.sqlite3
 images_path: ./.private/generated_images
+poses_path: ./.private/poses
 hugging_face_path: ./.private/huggingface

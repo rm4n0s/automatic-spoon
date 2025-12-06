@@ -15,7 +15,7 @@ from src.api.v1.engines.schemas import (
 from src.api.v1.generators.process.generator import start_generator
 from src.api.v1.generators.process.types import (
     GeneratorCommand,
-    GeneratorResult,
+    GeneratorEvent,
 )
 from src.api.v1.generators.schemas import GeneratorSchema
 from src.api.v1.images.schemas import ImageSchema
@@ -26,7 +26,7 @@ from src.core.enums import (
     AIModelStatus,
     AIModelType,
     GeneratorCommandType,
-    GeneratorResultType,
+    GeneratorEventType,
     GeneratorStatus,
     JobStatus,
     LongPromptTechnique,
@@ -96,7 +96,7 @@ def test_sd_compel():
     )
 
     commandq: Queue[GeneratorCommand] = multiprocessing.Queue()
-    resultq: Queue[GeneratorResult] = multiprocessing.Queue()
+    resultq: Queue[GeneratorEvent] = multiprocessing.Queue()
 
     p = multiprocessing.Process(
         target=start_generator,
@@ -114,7 +114,7 @@ def test_sd_compel():
     time.sleep(6)
 
     res = resultq.get()
-    assert res.result == GeneratorResultType.READY
+    assert res.event == GeneratorEventType.READY
 
     img_id = str(uuid.uuid4())
     image_king = ImageSchema(
@@ -132,9 +132,9 @@ def test_sd_compel():
     start = time.time()
     commandq.put(GeneratorCommand(command=GeneratorCommandType.JOB, value=job))
     res = resultq.get()
-    assert res.result == GeneratorResultType.IMAGE_FINISHED
+    assert res.event == GeneratorEventType.IMAGE_FINISHED
     res = resultq.get()
-    assert res.result == GeneratorResultType.JOB_FINISHED
+    assert res.event == GeneratorEventType.JOB_FINISHED
     end = time.time()
     print(f"first job took {end - start}")
     assert os.path.isfile(job.images[0].file_path)
@@ -170,11 +170,11 @@ def test_sd_compel():
     start = time.time()
     commandq.put(GeneratorCommand(command=GeneratorCommandType.JOB, value=job))
     res = resultq.get()
-    assert res.result == GeneratorResultType.IMAGE_FINISHED
+    assert res.event == GeneratorEventType.IMAGE_FINISHED
     res = resultq.get()
-    assert res.result == GeneratorResultType.IMAGE_FINISHED
+    assert res.event == GeneratorEventType.IMAGE_FINISHED
     res = resultq.get()
-    assert res.result == GeneratorResultType.JOB_FINISHED
+    assert res.event == GeneratorEventType.JOB_FINISHED
     end = time.time()
     print(f"second job took {end - start}")
     for img in job.images:
@@ -182,6 +182,6 @@ def test_sd_compel():
 
     commandq.put(GeneratorCommand(command=GeneratorCommandType.CLOSE, value=None))
     res = resultq.get()
-    assert res.result == GeneratorResultType.CLOSED
+    assert res.event == GeneratorEventType.CLOSED
 
     logging.debug(res)

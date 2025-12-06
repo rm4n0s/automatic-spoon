@@ -23,6 +23,7 @@ class ImageSchema(BaseModel):
     negative_prompt: str
     ready: bool
     file_path: str
+    name: str | None = Field(default=None)
     seed: int | None = Field(default=None)
     guidance_scale: float | None = Field(default=None)
     width: int | None = Field(default=None)

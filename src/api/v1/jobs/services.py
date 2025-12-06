@@ -5,7 +5,7 @@ import os
 
 from pytsterrors import TSTError
 
-from src.api.v1.generators.manager import ProcessManager
+from src.api.v1.generators.manager import GeneratorManager
 from src.api.v1.generators.repositories import GeneratorRepo
 from src.api.v1.images.repositories import ImageRepo
 from src.api.v1.jobs.schemas import JobSchema
@@ -19,7 +19,7 @@ from .repositories import JobRepo
 class JobService:
     job_repo: JobRepo
     generator_repo: GeneratorRepo
-    manager: ProcessManager
+    manager: GeneratorManager
     image_repo: ImageRepo
 
     def __init__(
@@ -27,7 +27,7 @@ class JobService:
         generator_repo: GeneratorRepo,
         job_repo: JobRepo,
         image_repo: ImageRepo,
-        manager: ProcessManager,
+        manager: GeneratorManager,
     ):
         self.job_repo = job_repo
         self.image_repo = image_repo
@@ -48,7 +48,7 @@ class JobService:
         return res
 
     async def create_job(self, config: Config, input: JobUserInput) -> JobSchema:
-        job = await self.job_repo.create(config.images_path, input)
+        job = await self.job_repo.create(config, input)
         assert job.id is not None
         await self.manager.send_signal_new_job(job.id)
         return job

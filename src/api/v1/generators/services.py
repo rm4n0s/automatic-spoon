@@ -7,7 +7,7 @@ from src.api.v1.engines.repositories import EngineRepo
 from src.api.v1.jobs.repositories import JobRepo
 from src.core.enums import GeneratorStatus
 
-from .manager import ProcessManager
+from .manager import GeneratorManager
 from .repositories import GeneratorRepo
 from .schemas import GeneratorSchema
 from .user_inputs import GeneratorUserInput
@@ -17,14 +17,14 @@ class GeneratorService:
     generator_repo: GeneratorRepo
     engine_repo: EngineRepo
     job_repo: JobRepo
-    manager: ProcessManager
+    manager: GeneratorManager
 
     def __init__(
         self,
         generator_repo: GeneratorRepo,
         engine_repo: EngineRepo,
         job_repo: JobRepo,
-        manager: ProcessManager,
+        manager: GeneratorManager,
     ):
         self.engine_repo = engine_repo
         self.generator_repo = generator_repo

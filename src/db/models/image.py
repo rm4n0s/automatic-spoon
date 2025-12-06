@@ -16,6 +16,7 @@ class Image(TimestampMixin, Model):
     file_path = fields.TextField()
     prompt = fields.TextField()
     negative_prompt = fields.TextField()
+    name = fields.TextField(null=True, default=None)
     seed = fields.IntField(null=True, default=None)
     guidance_scale = fields.FloatField(null=True, default=None)
     width = fields.IntField(null=True, default=None)

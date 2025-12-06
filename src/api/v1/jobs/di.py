@@ -3,7 +3,7 @@
 
 from dishka import Provider, Scope, provide
 
-from src.api.v1.generators.manager import ProcessManager
+from src.api.v1.generators.manager import GeneratorManager
 from src.api.v1.generators.repositories import GeneratorRepo
 from src.api.v1.images.repositories import ImageRepo
 
@@ -24,6 +24,6 @@ class JobServiceProvider(Provider):
         generator_repo: GeneratorRepo,
         job_repo: JobRepo,
         image_repo: ImageRepo,
-        manager: ProcessManager,
+        manager: GeneratorManager,
     ) -> JobService:
         return JobService(generator_repo, job_repo, image_repo, manager)

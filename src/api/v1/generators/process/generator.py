@@ -11,7 +11,7 @@ from pytsterrors import TSTError
 from src.api.v1.engines.schemas import EngineSchema
 from src.core.enums import (
     GeneratorCommandType,
-    GeneratorResultType,
+    GeneratorEventType,
 )
 
 from .pipe import (
@@ -23,14 +23,14 @@ from .pipe import (
     run_pipe,
     set_scheduler,
 )
-from .types import GeneratorCommand, GeneratorResult, ImageFinished, JobFinished
+from .types import GeneratorCommand, GeneratorEvent, ImageFinished, JobFinished
 
 
 class GeneratorProcess:
     _name: str
     _generator_id: int
     _command_queue: Queue[GeneratorCommand]
-    _result_queue: Queue[GeneratorResult]
+    _event_queue: Queue[GeneratorEvent]
     _engine: EngineSchema
     _gpu_id: int
 
@@ -41,12 +41,12 @@ class GeneratorProcess:
         gpu_id: int,
         engine: EngineSchema,
         commands_queue: Queue[GeneratorCommand],
-        result_queue: Queue[GeneratorResult],
+        event_queue: Queue[GeneratorEvent],
     ):
         self._name = generator_name
         self._generator_id = generator_id
         self._command_queue = commands_queue
-        self._result_queue = result_queue
+        self._event_queue = event_queue
         self._engine = engine
         self._gpu_id = gpu_id
 
@@ -92,11 +92,11 @@ class GeneratorProcess:
 
     def listening(self):
         pipe = self._create_pipe()
-        self._result_queue.put(
-            GeneratorResult(
+        self._event_queue.put(
+            GeneratorEvent(
                 generator_name=self._name,
                 generator_id=self._generator_id,
-                result=GeneratorResultType.READY,
+                event=GeneratorEventType.READY,
                 value=None,
             )
         )
@@ -107,11 +107,11 @@ class GeneratorProcess:
                 case GeneratorCommandType.JOB:
                     logging.debug("received job")
                     if cmd.value is None:
-                        self._result_queue.put(
-                            GeneratorResult(
+                        self._event_queue.put(
+                            GeneratorEvent(
                                 generator_name=self._name,
                                 generator_id=self._generator_id,
-                                result=GeneratorResultType.ERROR,
+                                event=GeneratorEventType.ERROR,
                                 value=TSTError(
                                     "command-value-was-none",
                                     "Command value was None on JOB command type",
@@ -129,20 +129,20 @@ class GeneratorProcess:
                             "VRAM used size:",
                             torch.cuda.max_memory_allocated() / 1024**3,
                         )
-                        self._result_queue.put(
-                            GeneratorResult(
+                        self._event_queue.put(
+                            GeneratorEvent(
                                 generator_name=self._name,
                                 generator_id=self._generator_id,
-                                result=GeneratorResultType.IMAGE_FINISHED,
+                                event=GeneratorEventType.IMAGE_FINISHED,
                                 value=ImageFinished(job_id=job.id, image_id=img.id),
                             )
                         )
 
-                    self._result_queue.put(
-                        GeneratorResult(
+                    self._event_queue.put(
+                        GeneratorEvent(
                             generator_name=self._name,
                             generator_id=self._generator_id,
-                            result=GeneratorResultType.JOB_FINISHED,
+                            event=GeneratorEventType.JOB_FINISHED,
                             value=JobFinished(job_id=job.id),
                         )
                     )
@@ -150,11 +150,11 @@ class GeneratorProcess:
                     logging.debug("closing")
                     break
 
-        self._result_queue.put(
-            GeneratorResult(
+        self._event_queue.put(
+            GeneratorEvent(
                 generator_name=self._name,
                 generator_id=self._generator_id,
-                result=GeneratorResultType.CLOSED,
+                event=GeneratorEventType.CLOSED,
                 value=None,
             )
         )
@@ -166,7 +166,7 @@ def start_generator(
     gpu_id: int,
     engine: EngineSchema,
     commands_queue: Queue[GeneratorCommand],
-    result_queue: Queue[GeneratorResult],
+    result_queue: Queue[GeneratorEvent],
 ):
     generator = GeneratorProcess(
         generator_name, generator_id, gpu_id, engine, commands_queue, result_queue

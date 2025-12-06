@@ -9,7 +9,7 @@ from src.api.v1.engines.repositories import EngineRepo
 from src.api.v1.images.repositories import ImageRepo
 from src.api.v1.jobs.repositories import JobRepo
 
-from .manager import ProcessManager
+from .manager import GeneratorManager
 from .repositories import GeneratorRepo
 from .services import GeneratorService
 
@@ -27,18 +27,18 @@ class GeneratorServiceProvider(Provider):
         generator_repo: GeneratorRepo,
         engine_repo: EngineRepo,
         job_repo: JobRepo,
-        manager: ProcessManager,
+        manager: GeneratorManager,
     ) -> GeneratorService:
         return GeneratorService(generator_repo, engine_repo, job_repo, manager)
 
 
-class ProcessManagerProvider(Provider):
+class GeneratorManagerProvider(Provider):
     scope = Scope.APP  # <-- singleton for the whole app
 
     @provide
     def process_manager(
         self, generator_repo: GeneratorRepo, job_repo: JobRepo, image_repo: ImageRepo
-    ) -> Iterable[ProcessManager]:
-        manager = ProcessManager(generator_repo, job_repo, image_repo)
+    ) -> Iterable[GeneratorManager]:
+        manager = GeneratorManager(generator_repo, job_repo, image_repo)
         yield manager
         # No cleanup: thread has no stop, runs until process exit

@@ -108,7 +108,11 @@ def test_sdxl_image_creation():
     prompt = "masterpiece,1girl,waitress,(white background:1.5)"
     job_input = JobUserInput(
         generator_id=gen.id,
-        images=[ImageUserInput(prompt=prompt, negative_prompt="bad quality")],
+        images=[
+            ImageUserInput(
+                prompt=prompt, negative_prompt="bad quality", name="waitress1"
+            )
+        ],
     )
 
     job = job_caller.create_job(job_input)

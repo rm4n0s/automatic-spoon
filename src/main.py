@@ -13,8 +13,9 @@ from fastapi.responses import JSONResponse
 from pytsterrors import TSTError
 
 from src.api.v1.di_container import create_dishka_container
-from src.api.v1.generators.manager import ProcessManager
+from src.api.v1.generators.manager import GeneratorManager
 from src.api.v1.router import api_router
+from src.api.v1.websockets.services import WSEventGeneratorStreamerService
 from src.core.config import Config, enable_hugging_face_envs, read_config
 from src.db.database import async_close_db, async_init_db
 
@@ -24,9 +25,11 @@ async def lifespan(app: FastAPI):
     container: AsyncContainer = app.state.dishka_container  # Set by setup_dishka
     config = await container.get(Config)
     os.makedirs(config.images_path, exist_ok=True)
+    os.makedirs(config.poses_path, exist_ok=True)
     enable_hugging_face_envs(config)
     await async_init_db(config.db_path)
-    _ = await container.get(ProcessManager)
+    _ = await container.get(GeneratorManager)
+    _ = await container.get(WSEventGeneratorStreamerService)
     yield
     print("closing server")
     await async_close_db()

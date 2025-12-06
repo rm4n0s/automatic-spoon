@@ -6,19 +6,26 @@ import multiprocessing
 from dataclasses import dataclass
 from multiprocessing.queues import Queue
 from threading import Lock, Thread
+from typing import Any
 
 from src.api.v1.images.repositories import ImageRepo
 from src.api.v1.jobs.repositories import JobRepo
 from src.core.enums import (
     GeneratorCommandType,
-    GeneratorResultType,
+    GeneratorEventType,
     GeneratorStatus,
     JobStatus,
     ManagerSignalType,
 )
 
 from .process.generator import start_generator
-from .process.types import GeneratorCommand, GeneratorResult, ImageFinished, JobFinished
+from .process.types import (
+    GeneratorCommand,
+    GeneratorEvent,
+    ImageFinished,
+    JobFinished,
+    generator_event_to_json,
+)
 from .repositories import GeneratorRepo
 from .schemas import GeneratorSchema
 
@@ -46,16 +53,17 @@ async def _on_process_manager_init(generator_repo: GeneratorRepo):
             )
 
 
-class ProcessManager:
+class GeneratorManager:
     _procs: dict[int, GeneratorProcess]
     _lock: Lock
-    _result_queue: Queue[GeneratorResult]
+    _generator_event_queue: Queue[GeneratorEvent]
     _signal_queue: Queue[ManagerSignal]
-    _result_listener_thread: Thread
+    _event_listener_thread: Thread
     _signal_listener_thread: Thread
     _generator_repo: GeneratorRepo
     _job_repo: JobRepo
     _image_repo: ImageRepo
+    websocket_event_queue: Queue[str]
 
     def __init__(
         self, generator_repo: GeneratorRepo, job_repo: JobRepo, image_repo: ImageRepo
@@ -65,37 +73,42 @@ class ProcessManager:
         self._image_repo = image_repo
         self._procs = {}
         self._lock = Lock()
-        self._result_queue = multiprocessing.Queue()
+        self._generator_event_queue = multiprocessing.Queue()
         self._signal_queue = multiprocessing.Queue()
+        self.websocket_event_queue = multiprocessing.Queue()
 
         self._signal_listener_thread = Thread(
             target=self._listen_for_signals, daemon=True
         )
         self._signal_listener_thread.start()
-        self._result_listener_thread = Thread(
+        self._event_listener_thread = Thread(
             target=self._listen_for_results, daemon=True
         )
-        self._result_listener_thread.start()
+        self._event_listener_thread.start()
 
     def _listen_for_results(self):
         asyncio.run(_on_process_manager_init(self._generator_repo))
         while True:
-            res = self._result_queue.get()
+            res = self._generator_event_queue.get()
             print(
-                f"generator {res.generator_name} with ID {res.generator_id} received {res.result}"
+                f"generator {res.generator_name} with ID {res.generator_id} received {res.event}"
             )
-            match res.result:
-                case GeneratorResultType.JOB_STARTING:
+
+            json_str = generator_event_to_json(res)
+            self.websocket_event_queue.put(json_str)
+
+            match res.event:
+                case GeneratorEventType.JOB_STARTING:
                     asyncio.run(self.on_job_starting(res.generator_id))
-                case GeneratorResultType.JOB_FINISHED:
+                case GeneratorEventType.JOB_FINISHED:
                     assert isinstance(res.value, JobFinished)
                     asyncio.run(self.on_job_finished(res.generator_id, res.value))
-                case GeneratorResultType.IMAGE_FINISHED:
+                case GeneratorEventType.IMAGE_FINISHED:
                     assert isinstance(res.value, ImageFinished)
                     asyncio.run(self.on_image_finished(res.generator_id, res.value))
-                case GeneratorResultType.READY:
+                case GeneratorEventType.READY:
                     asyncio.run(self.on_ready(res.generator_id))
-                case GeneratorResultType.CLOSED:
+                case GeneratorEventType.CLOSED:
                     asyncio.run(self.on_closed(res.generator_id))
 
     def _listen_for_signals(self):
@@ -180,7 +193,7 @@ class ProcessManager:
                     gen.gpu_id,
                     gen.engine,
                     commandq,
-                    self._result_queue,
+                    self._generator_event_queue,
                 ),
             )
             p.start()

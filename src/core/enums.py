@@ -92,7 +92,7 @@ class GeneratorCommandType(enum.StrEnum):
     CLOSE = "close"
 
 
-class GeneratorResultType(enum.StrEnum):
+class GeneratorEventType(enum.StrEnum):
     READY = "ready"
     JOB_STARTING = "job_starting"
     JOB_FINISHED = "job_finished"

@@ -19,6 +19,7 @@ class ControlNetImageInput(BaseModel):
 class ImageUserInput(BaseModel):
     prompt: str
     negative_prompt: str
+    name: str | None = Field(default=None)
     seed: int | None = Field(default=None)
     guidance_scale: float | None = Field(default=None)
     width: int | None = Field(default=None)

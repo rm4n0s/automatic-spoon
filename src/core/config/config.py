@@ -11,6 +11,7 @@ from mashumaro.mixins.yaml import DataClassYAMLMixin
 class Config(DataClassYAMLMixin):
     db_path: str
     images_path: str
+    poses_path: str
     hugging_face_path: str
 
 

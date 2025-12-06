@@ -10,6 +10,7 @@ from pytsterrors import TSTError
 from tortoise.expressions import Q
 
 from src.api.v1.images.repositories import serialize_image
+from src.core.config import Config
 from src.core.enums import JobStatus
 from src.db.models import ControlNetImage, Image, Job
 
@@ -115,7 +116,7 @@ class JobRepo:
         )
         return job_sch
 
-    async def create(self, images_folder_path: str, input: JobUserInput) -> JobSchema:
+    async def create(self, config: Config, input: JobUserInput) -> JobSchema:
         job_db = await Job.create(generator_id=input.generator_id)
         img_sch_list = []
         for img_input in input.images:
@@ -124,13 +125,17 @@ class JobRepo:
             kwargs["generator_id"] = input.generator_id
             kwargs["job_id"] = job_db.id
             kwargs["file_path"] = os.path.join(
-                images_folder_path, img_filename + "." + img_input.file_type
+                config.images_path, img_filename + "." + img_input.file_type
             )
+
             kwargs["prompt"] = img_input.prompt
             kwargs["negative_prompt"] = img_input.negative_prompt
             kwargs["file_type"] = img_input.file_type
             if img_input.seed:
                 kwargs["seed"] = img_input.seed
+
+            if img_input.name:
+                kwargs["name"] = img_input.name
 
             if img_input.guidance_scale:
                 kwargs["guidance_scale"] = img_input.guidance_scale
@@ -156,7 +161,7 @@ class JobRepo:
             for ci in img_input.control_images:
                 pose_filename = "pose-" + str(uuid.uuid4())
                 pose_binary = base64.b64decode(ci.data_base64)
-                pose_file_path = os.path.join(images_folder_path, pose_filename)
+                pose_file_path = os.path.join(config.poses_path, pose_filename)
                 with open(pose_file_path, "wb") as output_file:
                     _ = output_file.write(pose_binary)
 
