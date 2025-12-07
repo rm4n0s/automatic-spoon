@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import torch
-from compel import CompelForSD, CompelForSDXL
+from compel import Compel, CompelForSD, CompelForSDXL, ReturnedEmbeddingsType
 from diffusers import (
     AutoencoderKL,
     ControlNetModel,
@@ -35,7 +35,10 @@ from pytsterrors import TSTError
 
 # from transformers import CLIPTextModel, CLIPTokenizer
 from safetensors.torch import load_file
-from sd_embed.embedding_funcs import get_weighted_text_embeddings_sdxl
+from sd_embed.embedding_funcs import (
+    get_weighted_text_embeddings_sd15,
+    get_weighted_text_embeddings_sdxl,
+)
 
 from src.api.v1.aimodels.schemas import AIModelSchema
 from src.api.v1.engines.schemas import (
@@ -144,7 +147,10 @@ def create_pipe(
         kwargs["vae"] = vae
 
     if len(cnets) > 0:
-        kwargs["controlnet"] = cnets
+        if len(cnets) == 1:
+            kwargs["controlnet"] = cnets[0]
+        else:
+            kwargs["controlnet"] = cnets
 
     pipe = None
     if checkpoint.path_type == PathType.FILE:
@@ -325,36 +331,49 @@ def enable_long_prompt(
     match engine.long_prompt_technique:
         case LongPromptTechnique.COMPEL:
             if engine.checkpoint_model.model_base == AIModelBase.SDXL:
-                compel = CompelForSDXL(
-                    pipe,
+                compel = Compel(
+                    tokenizer=[pipe.tokenizer, pipe.tokenizer_2],
+                    text_encoder=[pipe.text_encoder, pipe.text_encoder_2],
+                    returned_embeddings_type=ReturnedEmbeddingsType.PENULTIMATE_HIDDEN_STATES_NON_NORMALIZED,
+                    requires_pooled=[False, True],
                 )
-                conditioning = compel(
-                    main_prompt=prompt, negative_prompt=negative_prompt
+                prompt_embeds, pooled_prompt_embeds = compel(prompt)  # pyright: ignore[reportAssignmentType]
+                prompt_neg_embeds, negative_pooled_prompt_embeds = compel(  # pyright: ignore[reportAssignmentType]
+                    negative_prompt
                 )
-                emb.prompt_embeds = conditioning.embeds
-                emb.pooled_prompt_embeds = conditioning.pooled_embeds
-                emb.prompt_neg_embeds = conditioning.negative_embeds
-                emb.negative_pooled_prompt_embeds = conditioning.negative_pooled_embeds
+
+                emb.prompt_embeds = prompt_embeds
+                emb.pooled_prompt_embeds = pooled_prompt_embeds  # pyright: ignore[reportAttributeAccessIssue]
+                emb.prompt_neg_embeds = prompt_neg_embeds
+                emb.negative_pooled_prompt_embeds = negative_pooled_prompt_embeds  # pyright: ignore[reportAttributeAccessIssue]
 
             if engine.checkpoint_model.model_base == AIModelBase.SD:
-                compel = CompelForSD(
-                    pipe,
+                compel = Compel(
+                    tokenizer=pipe.tokenizer, text_encoder=pipe.text_encoder
                 )
-                conditioning = compel(prompt=prompt, negative_prompt=negative_prompt)
-                emb.prompt_embeds = conditioning.embeds
-                emb.pooled_prompt_embeds = conditioning.pooled_embeds
-                emb.prompt_neg_embeds = conditioning.negative_embeds
-                emb.negative_pooled_prompt_embeds = conditioning.negative_pooled_embeds
+                prompt_embeds = compel.build_conditioning_tensor(prompt)
+                prompt_neg_embeds = compel.build_conditioning_tensor(negative_prompt)
+                emb.prompt_embeds = prompt_embeds  # pyright: ignore[reportAttributeAccessIssue]
+                emb.prompt_neg_embeds = prompt_neg_embeds  # pyright: ignore[reportAttributeAccessIssue]
 
         case LongPromptTechnique.SDEMBED:
-            (
-                emb.prompt_embeds,
-                emb.prompt_neg_embeds,
-                emb.pooled_prompt_embeds,
-                emb.negative_pooled_prompt_embeds,
-            ) = get_weighted_text_embeddings_sdxl(
-                pipe, prompt=prompt, neg_prompt=negative_prompt
-            )
+            if engine.checkpoint_model.model_base == AIModelBase.SDXL:
+                (
+                    emb.prompt_embeds,
+                    emb.prompt_neg_embeds,
+                    emb.pooled_prompt_embeds,
+                    emb.negative_pooled_prompt_embeds,
+                ) = get_weighted_text_embeddings_sdxl(
+                    pipe, prompt=prompt, neg_prompt=negative_prompt
+                )
+
+            if engine.checkpoint_model.model_base == AIModelBase.SD:
+                (
+                    emb.prompt_embeds,
+                    emb.prompt_neg_embeds,
+                ) = get_weighted_text_embeddings_sd15(
+                    pipe, prompt=prompt, neg_prompt=negative_prompt
+                )
 
     return emb
 
@@ -379,8 +398,16 @@ def run_pipe(pipe, engine: EngineSchema, img_sch: ImageSchema):  # pyright: igno
             engine, img_sch
         )
 
-        kwargs["image"] = conditioning_images
-        kwargs["controlnet_conditioning_scale"] = controlnet_conditioning_scale
+        if len(conditioning_images) == 1:
+            kwargs["image"] = conditioning_images[0]
+        else:
+            kwargs["image"] = conditioning_images
+
+        if len(controlnet_conditioning_scale) == 1:
+            kwargs["controlnet_conditioning_scale"] = controlnet_conditioning_scale[0]
+        else:
+            kwargs["controlnet_conditioning_scale"] = controlnet_conditioning_scale
+
         kwargs["control_guidance_start"] = control_guidance_start
         kwargs["control_guidance_end"] = control_guidance_end
 
@@ -389,10 +416,13 @@ def run_pipe(pipe, engine: EngineSchema, img_sch: ImageSchema):  # pyright: igno
 
         kwargs["prompt_embeds"] = prompt_embeddings.prompt_embeds
         kwargs["prompt_neg_embeds"] = prompt_embeddings.prompt_neg_embeds
-        kwargs["pooled_prompt_embeds"] = prompt_embeddings.pooled_prompt_embeds
-        kwargs["negative_pooled_prompt_embeds"] = (
-            prompt_embeddings.negative_pooled_prompt_embeds
-        )
+        if prompt_embeddings.pooled_prompt_embeds is not None:
+            kwargs["pooled_prompt_embeds"] = prompt_embeddings.pooled_prompt_embeds
+
+        if prompt_embeddings.negative_pooled_prompt_embeds is not None:
+            kwargs["negative_pooled_prompt_embeds"] = (
+                prompt_embeddings.negative_pooled_prompt_embeds
+            )
 
     else:
         kwargs["prompt"] = prompt

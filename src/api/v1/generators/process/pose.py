@@ -36,16 +36,36 @@ def poses_from_reference_image(engine: EngineSchema, ci: ControlNetImageSchema):
                 pose_image = openpose(
                     reference_pose_image, include_hand=True, include_face=True
                 )
+                _ = pose_image.save(ci.image_file_path + "_openpose.png")
                 conditioning_images.append(pose_image)
                 controlnet_conditioning_scales.append(scale)
             case ControlNetType.MIDAS:
                 midas = MidasDetector.from_pretrained("lllyasviel/Annotators")
                 depth_image = midas(reference_pose_image)
-                conditioning_images.append(depth_image)
+
+                # Convert to numpy for processing
+                depth_array = (
+                    np.array(depth_image).astype(np.float32) / 255.0
+                )  # Normalize to [0,1]
+
+                # Optional: Invert if needed (test visually)
+                # depth_array = 1.0 - depth_array
+
+                # Enhance contrast for better hand distinction (optional, adjust params)
+                depth_array = np.clip(
+                    (depth_array - 0.2) / 0.6, 0, 1
+                )  # Stretch contrast
+
+                # Back to PIL for ControlNet
+                processed_depth = Image.fromarray((depth_array * 255).astype(np.uint8))
+                _ = processed_depth.save(ci.image_file_path + "_midas.png")  # pyright: ignore[reportAttributeAccessIssue]
+
+                conditioning_images.append(processed_depth)
                 controlnet_conditioning_scales.append(scale)
 
             case ControlNetType.MEDIAPIPE:
                 pose_image = get_mediapipe_pose(ci.image_file_path)
+                _ = pose_image.save(ci.image_file_path + "_mediapipe.png")
                 conditioning_images.append(pose_image)
                 controlnet_conditioning_scales.append(scale)
             case ControlNetType.CANNY:
@@ -58,6 +78,8 @@ def poses_from_reference_image(engine: EngineSchema, ci: ControlNetImageSchema):
                     low_threshold=ci.canny_low_threshold,
                     high_threshold=ci.canny_high_threshold,
                 )
+                _ = pose_image.save(ci.image_file_path + "_canny.png")
+
                 conditioning_images.append(pose_image)
                 controlnet_conditioning_scales.append(scale)
 

@@ -32,7 +32,7 @@ pip install controlnet_aux==0.0.10 \
 # Install dependencies for having long prompts
 echo '+++++++++++++++++ Installing packages for long prompts'
 pip install git+https://github.com/xhinker/sd_embed.git@main \
-            compel==2.2.1
+            compel==2.3.1
 
 # Install dependencies for Stable Diffusion
 echo '+++++++++++++++++ Installing stable diffusion'
