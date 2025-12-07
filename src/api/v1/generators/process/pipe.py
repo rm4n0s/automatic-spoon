@@ -59,6 +59,7 @@ from .pose import prepare_pose_images
 
 
 def create_controlnets(cnet_models: list[AIModelSchema]) -> list[ControlNetModel]:
+    print("cnet_models ", cnet_models)
     cnets = []
     for v in cnet_models:
         variant = str(v.variant)
