@@ -319,6 +319,106 @@ class PromptEmbeds:
     negative_pooled_prompt_embeds: torch.Tensor | None
 
 
+def build_long_prompt_embeds_for_sdxl(
+    pipe,
+    compel_instance,
+    prompt: str,
+    max_tokens: int = 75,
+    verbose: bool = True,
+):
+    """
+    Automatically split a long prompt into chunks and build embeddings.
+    Works only for SDXL.
+
+    Args:
+        pipe: The pipe
+        compel_instance: Compel object SDXL
+        prompt: The full prompt string (can be very long)
+        max_tokens: Max tokens per chunk (default 75 to stay safe under 77)
+        verbose: Print chunking information
+
+    Returns:
+        tuple of (conditioning tensor, pooled embeddings)
+    """
+
+    tokenizer = pipe.tokenizer
+
+    # Tokenize the full prompt to check length
+    full_tokens = tokenizer(prompt, truncation=False, add_special_tokens=False)
+    token_count = len(full_tokens["input_ids"])
+
+    if token_count <= max_tokens:
+        if verbose:
+            print(f"✓ Prompt fits in {token_count} tokens (under {max_tokens})")
+
+        result = compel_instance(prompt)  # Returns (conditioning, pooled)
+        return result.embeds, result.pooled_embeds
+
+    if verbose:
+        print(f"⚠ Prompt is {token_count} tokens (over {max_tokens})")
+        print("→ Splitting into chunks...")
+
+    # Split prompt by commas for intelligent chunking
+    parts = [p.strip() for p in prompt.split(",")]
+
+    chunks = []
+    current_chunk = []
+    current_tokens = 0
+
+    for part in parts:
+        # Count tokens for this part
+        part_tokens = tokenizer(part, truncation=False, add_special_tokens=False)
+        part_token_count = len(part_tokens["input_ids"])
+
+        # If adding this part would exceed limit, save current chunk
+        if current_tokens + part_token_count > max_tokens and current_chunk:
+            chunk_text = ", ".join(current_chunk)
+            chunks.append(chunk_text)
+            if verbose:
+                chunk_len = len(tokenizer(chunk_text, truncation=False)["input_ids"])
+                print(f"  Chunk {len(chunks)}: {chunk_len} tokens")
+            current_chunk = [part]
+            current_tokens = part_token_count
+        else:
+            current_chunk.append(part)
+            current_tokens += part_token_count
+
+    # Add the last chunk
+    if current_chunk:
+        chunk_text = ", ".join(current_chunk)
+        chunks.append(chunk_text)
+        if verbose:
+            chunk_len = len(tokenizer(chunk_text, truncation=False)["input_ids"])
+            print(f"  Chunk {len(chunks)}: {chunk_len} tokens")
+
+    if verbose:
+        print(f"✓ Created {len(chunks)} chunks\n")
+
+    # SDXL returns (conditioning, pooled) for each chunk
+    chunk_results = [compel_instance(chunk) for chunk in chunks]
+    # CompelForSDXL returns LabelledConditioning objects
+    conditioning_list = [result.embeds for result in chunk_results]
+    pooled_list = [result.pooled_embeds for result in chunk_results]
+
+    if hasattr(compel_instance, "pad_conditioning_tensors_to_same_length"):
+        padded_conditionings = compel_instance.pad_conditioning_tensors_to_same_length(
+            conditioning_list
+        )
+        final_conditioning = torch.cat(padded_conditionings, dim=1)
+    else:
+        # Legacy concat method or manual concat
+        if hasattr(compel_instance, "concat_conditioning"):
+            final_conditioning = compel_instance.concat_conditioning(conditioning_list)
+        else:
+            # Manual concatenation as fallback
+            final_conditioning = torch.cat(conditioning_list, dim=-2)
+
+    # For pooled embeddings, use the last chunk's pooled embeddings
+    final_pooled = pooled_list[-1]
+
+    return (final_conditioning, final_pooled)
+
+
 def enable_long_prompt(
     pipe, prompt: str, negative_prompt: str, engine: EngineSchema
 ) -> PromptEmbeds:
@@ -332,15 +432,13 @@ def enable_long_prompt(
     match engine.long_prompt_technique:
         case LongPromptTechnique.COMPEL:
             if engine.checkpoint_model.model_base == AIModelBase.SDXL:
-                compel = Compel(
-                    tokenizer=[pipe.tokenizer, pipe.tokenizer_2],
-                    text_encoder=[pipe.text_encoder, pipe.text_encoder_2],
-                    returned_embeddings_type=ReturnedEmbeddingsType.PENULTIMATE_HIDDEN_STATES_NON_NORMALIZED,
-                    requires_pooled=[False, True],
+                compel = CompelForSDXL(pipe)
+
+                prompt_embeds, pooled_prompt_embeds = build_long_prompt_embeds_for_sdxl(
+                    pipe, compel, prompt
                 )
-                prompt_embeds, pooled_prompt_embeds = compel(prompt)  # pyright: ignore[reportAssignmentType]
-                prompt_neg_embeds, negative_pooled_prompt_embeds = compel(  # pyright: ignore[reportAssignmentType]
-                    negative_prompt
+                prompt_neg_embeds, negative_pooled_prompt_embeds = (
+                    build_long_prompt_embeds_for_sdxl(pipe, compel, negative_prompt)
                 )
 
                 emb.prompt_embeds = prompt_embeds
