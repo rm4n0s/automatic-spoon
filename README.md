@@ -1,6 +1,8 @@
 # Automatic Spoon
 Automatic Spoon is an open source REST API to start stable diffussion's image generators and send a batch of images to create.
 
+## This project have been postponed because of incomplete knowledge on IP Adapters. I will move to ComfyUI
+
 ## Installation
 Make sure you running python 3.12. <br/>
 If you are not sure, then install python 3.12 from pyenv. <br/>

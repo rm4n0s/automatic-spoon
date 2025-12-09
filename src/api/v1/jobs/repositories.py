@@ -1,5 +1,5 @@
 # Copyright © 2025-2026 Emmanouil Ragiadakos
-# SPDX-License-Identifier: SSPL-1.0
+# SPDX-License-Identifier: MIT
 
 import base64
 import os
@@ -10,6 +10,7 @@ from pytsterrors import TSTError
 from tortoise.expressions import Q
 
 from src.api.v1.images.repositories import serialize_image
+from src.api.v1.images.schemas import ImageSchema
 from src.core.config import Config
 from src.core.enums import JobStatus
 from src.db.models import ControlNetImage, Image, Job
@@ -22,62 +23,46 @@ class JobRepo:
     async def get_all(self) -> list[JobSchema]:
         jobs = await Job.all()
         job_sch_list = []
-        for job in jobs:
-            imgs = await Image.filter(job_id=job.id)
+        for job_db in jobs:
+            imgs = await Image.filter(job_id=job_db.id)
             img_sch_list = []
             for img in imgs:
-                cnis = await ControlNetImage.filter(job_id=job.id, image_id=img.id)
+                cnis = await ControlNetImage.filter(job_id=job_db.id, image_id=img.id)
                 img_sch = await serialize_image(img, cnis)
                 img_sch_list.append(img_sch)
 
-            job_sch = JobSchema(
-                id=job.id,
-                generator_id=job.generator_id,
-                images=img_sch_list,
-                status=job.status,
-            )
+            job_sch = serialize_job(job_db, img_sch_list)
             job_sch_list.append(job_sch)
         return job_sch_list
 
     async def filter(self, *args: Q, **kwargs: Any) -> list[JobSchema]:  # pyright: ignore[reportExplicitAny]
         jobs = await Job.filter(*args, **kwargs)
         job_sch_list = []
-        for job in jobs:
-            imgs = await Image.filter(job_id=job.id)
+        for job_db in jobs:
+            imgs = await Image.filter(job_id=job_db.id)
             img_sch_list = []
             for img in imgs:
-                cnis = await ControlNetImage.filter(job_id=job.id, image_id=img.id)
+                cnis = await ControlNetImage.filter(job_id=job_db.id, image_id=img.id)
                 img_sch = await serialize_image(img, cnis)
                 img_sch_list.append(img_sch)
 
-            job_sch = JobSchema(
-                id=job.id,
-                generator_id=job.generator_id,
-                images=img_sch_list,
-                status=job.status,
-            )
+            job_sch = serialize_job(job_db, img_sch_list)
             job_sch_list.append(job_sch)
         return job_sch_list
 
     async def get_or_none(self, id: int) -> JobSchema | None:
-        job = await Job.get_or_none(id=id)
-        if job is None:
+        job_db = await Job.get_or_none(id=id)
+        if job_db is None:
             return None
 
-        imgs = await Image.filter(job_id=job.id)
+        imgs = await Image.filter(job_id=job_db.id)
         img_sch_list = []
         for img in imgs:
             cnis = await ControlNetImage.filter(image_id=img.id)
             img_sch = await serialize_image(img, cnis)
             img_sch_list.append(img_sch)
 
-        job_sch = JobSchema(
-            id=job.id,
-            generator_id=job.generator_id,
-            images=img_sch_list,
-            status=job.status,
-        )
-        return job_sch
+        return serialize_job(job_db, img_sch_list)
 
     async def get_one(self, id: int) -> JobSchema:
         job = await self.get_or_none(id=id)
@@ -91,33 +76,30 @@ class JobRepo:
         return job
 
     async def update_status(self, id: int, status: JobStatus) -> JobSchema:
-        job = await Job.get_or_none(id=id)
-        if not job:
+        job_db = await Job.get_or_none(id=id)
+        if not job_db:
             raise TSTError(
                 "job-is-not-found",
                 f"Job with ID {id} not found",
                 metadata={"status_code": 404},
             )
 
-        job.status = status
-        await job.save()
-        imgs = await Image.filter(job_id=job.id)
+        job_db.status = status
+        await job_db.save()
+        imgs = await Image.filter(job_id=job_db.id)
         img_sch_list = []
         for img in imgs:
             cnis = await ControlNetImage.filter(image_id=img.id)
             img_sch = await serialize_image(img, cnis)
             img_sch_list.append(img_sch)
 
-        job_sch = JobSchema(
-            id=job.id,
-            generator_id=job.generator_id,
-            images=img_sch_list,
-            status=job.status,
-        )
-        return job_sch
+        return serialize_job(job_db, img_sch_list)
 
     async def create(self, config: Config, input: JobUserInput) -> JobSchema:
-        job_db = await Job.create(generator_id=input.generator_id)
+        job_db = await Job.create(
+            generator_id=input.generator_id,
+            ip_adapter_config=input.ip_adapter_config,
+        )
         img_sch_list = []
         for img_input in input.images:
             img_filename = str(uuid.uuid4())
@@ -180,12 +162,7 @@ class JobRepo:
 
             img_sch_list.append(img_sch)
 
-        return JobSchema(
-            id=job_db.id,
-            generator_id=job_db.generator_id,
-            images=img_sch_list,
-            status=job_db.status,
-        )
+        return serialize_job(job_db, img_sch_list)
 
     async def delete(self, job_id: int):
         job = await Job.get_or_none(id=job_id)
@@ -218,3 +195,13 @@ class JobRepo:
 
             for img in imgs:
                 await img.delete()
+
+
+def serialize_job(job_db: Job, img_sch_list: list[ImageSchema]) -> JobSchema:
+    return JobSchema(
+        id=job_db.id,
+        generator_id=job_db.generator_id,
+        images=img_sch_list,
+        status=job_db.status,
+        ip_adapter_config=job_db.ip_adapter_config,
+    )

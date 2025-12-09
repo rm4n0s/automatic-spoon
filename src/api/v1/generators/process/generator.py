@@ -1,11 +1,12 @@
 # Copyright © 2025-2026 Emmanouil Ragiadakos
-# SPDX-License-Identifier: SSPL-1.0
+# SPDX-License-Identifier: MIT
 
 import logging
 from multiprocessing.queues import Queue
 
 import torch
 from diffusers import DiffusionPipeline
+from PIL import Image
 from pytsterrors import TSTError
 
 from src.api.v1.engines.schemas import EngineSchema
@@ -19,9 +20,12 @@ from .pipe import (
     create_pipe,
     create_vae,
     load_embeddings,
+    load_ip_adapter,
     load_loras,
     run_pipe,
+    set_ip_adapter_scale,
     set_scheduler,
+    unload_ip_adapter,
 )
 from .types import GeneratorCommand, GeneratorEvent, ImageFinished, JobFinished
 
@@ -88,6 +92,7 @@ class GeneratorProcess:
         set_scheduler(pipe, self._engine.scheduler, scheduler_config)
         pipe = pipe.to("cuda:" + str(self._gpu_id))
         pipe.safety_checker = None
+
         return pipe
 
     def listening(self):
@@ -122,13 +127,31 @@ class GeneratorProcess:
 
                     job = cmd.value
                     assert job.id
+
+                    prv_img_path = None
+                    ip_adapter_image = None
+                    ip_adapter_loaded = False
                     for img in job.images:
                         assert img.id
-                        run_pipe(pipe, self._engine, img)
+
+                        if (
+                            prv_img_path is not None
+                            and ip_adapter_loaded is False
+                            and job.ip_adapter_config is not None
+                        ):
+                            print("ip adapter config", job.ip_adapter_config)
+                            load_ip_adapter(pipe, job)
+                            set_ip_adapter_scale(pipe, job)
+                            ip_adapter_loaded = True
+                            ip_adapter_image = Image.open(prv_img_path).convert("RGB")
+
+                        run_pipe(pipe, self._engine, img, ip_adapter_image)
                         print(
                             "VRAM used size:",
                             torch.cuda.max_memory_allocated() / 1024**3,
                         )
+                        prv_img_path = img.file_path
+
                         self._event_queue.put(
                             GeneratorEvent(
                                 generator_name=self._name,
@@ -137,6 +160,9 @@ class GeneratorProcess:
                                 value=ImageFinished(job_id=job.id, image_id=img.id),
                             )
                         )
+
+                    if ip_adapter_loaded:
+                        unload_ip_adapter(pipe, job)
 
                     self._event_queue.put(
                         GeneratorEvent(

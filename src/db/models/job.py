@@ -1,5 +1,5 @@
 # Copyright © 2025-2026 Emmanouil Ragiadakos
-# SPDX-License-Identifier: SSPL-1.0
+# SPDX-License-Identifier: MIT
 
 from tortoise import fields
 from tortoise.models import Model
@@ -12,4 +12,5 @@ class Job(TimestampMixin, Model):
     id = fields.IntField(primary_key=True)
     generator_id = fields.IntField()
     status = fields.CharEnumField(enum_type=JobStatus, default=JobStatus.WAITING)
+    ip_adapter_config = fields.JSONField(null=True, default=None)
     finshed_at = fields.DatetimeField(null=True, default=None)

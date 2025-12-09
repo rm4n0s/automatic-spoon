@@ -1,5 +1,5 @@
 # Copyright © 2025-2026 Emmanouil Ragiadakos
-# SPDX-License-Identifier: SSPL-1.0
+# SPDX-License-Identifier: MIT
 
 from .config import Config, enable_hugging_face_envs, read_config
 

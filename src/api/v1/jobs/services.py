@@ -1,5 +1,5 @@
 # Copyright © 2025-2026 Emmanouil Ragiadakos
-# SPDX-License-Identifier: SSPL-1.0
+# SPDX-License-Identifier: MIT
 
 import os
 
@@ -44,6 +44,20 @@ class JobService:
                     "error": f"generator with id {input.generator_id} doesn't exist",
                 }
             )
+
+        if input.ip_adapter_config is not None:
+            if (
+                "model" not in input.ip_adapter_config.keys()
+                or "subfolder" not in input.ip_adapter_config.keys()
+                or "weight_name" not in input.ip_adapter_config.keys()
+                or "scale" not in input.ip_adapter_config.keys()
+            ):
+                res.append(
+                    {
+                        "field": "ip_adapter_config",
+                        "error": "There is need to be a JSON with fields 'model', 'subfolder', 'weight_name' and 'scale' ",
+                    }
+                )
 
         return res
 

@@ -1,5 +1,5 @@
 # Copyright © 2025-2026 Emmanouil Ragiadakos
-# SPDX-License-Identifier: SSPL-1.0
+# SPDX-License-Identifier: MIT
 
 from dataclasses import dataclass
 from typing import Any
@@ -46,6 +46,7 @@ from src.api.v1.engines.schemas import (
     LoraAndWeight,
 )
 from src.api.v1.images.schemas import ImageSchema
+from src.api.v1.jobs.schemas import JobSchema
 from src.core.enums import (
     AIModelBase,
     LongPromptTechnique,
@@ -477,7 +478,34 @@ def enable_long_prompt(
     return emb
 
 
-def run_pipe(pipe, engine: EngineSchema, img_sch: ImageSchema):  # pyright: ignore[reportMissingParameterType,reportUnknownParameterType]
+def load_ip_adapter(pipe, job: JobSchema):
+    if job.ip_adapter_config is None:
+        return
+
+    config = job.ip_adapter_config
+    pipe.load_ip_adapter(
+        config["model"],
+        subfolder=config["subfolder"],
+        weight_name=config["weight_name"],
+    )
+
+
+def set_ip_adapter_scale(pipe, job: JobSchema):
+    if job.ip_adapter_config is None:
+        return
+
+    config = job.ip_adapter_config
+    pipe.set_ip_adapter_scale(config["scale"])
+
+
+def unload_ip_adapter(pipe, job: JobSchema):
+    if job.ip_adapter_config is None:
+        return
+
+    pipe.unload_ip_adapter()
+
+
+def run_pipe(pipe, engine: EngineSchema, img_sch: ImageSchema, ip_adapter_image=None):  # pyright: ignore[reportMissingParameterType,reportUnknownParameterType]
     seed = img_sch.seed or engine.seed
     guidance_scale = img_sch.guidance_scale or engine.guidance_scale
     num_inference_steps = img_sch.steps or engine.steps
@@ -491,6 +519,9 @@ def run_pipe(pipe, engine: EngineSchema, img_sch: ImageSchema):  # pyright: igno
     prompt = img_sch.prompt
     negative_prompt = img_sch.negative_prompt
     kwargs = {}
+
+    if ip_adapter_image is not None:
+        kwargs["ip_adapter_image"] = ip_adapter_image
 
     if len(img_sch.control_images) > 0:
         conditioning_images, controlnet_conditioning_scale = prepare_pose_images(
